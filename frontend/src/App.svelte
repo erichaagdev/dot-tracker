@@ -10,6 +10,9 @@
   import Browse from './screens/Browse.svelte'
   import Group from './screens/Group.svelte'
   import Message from './screens/Message.svelte'
+  import People from './screens/People.svelte'
+  import Person from './screens/Person.svelte'
+  import PersonBook from './screens/PersonBook.svelte'
   import Shelf from './screens/Shelf.svelte'
   import SignIn from './screens/SignIn.svelte'
   import Welcome from './screens/Welcome.svelte'
@@ -59,6 +62,12 @@
       <Ready><Book id={route.params.id} /></Ready>
     {:else if route.name === 'shelf'}
       <Ready><Shelf /></Ready>
+    {:else if route.name === 'people'}
+      <Ready><People /></Ready>
+    {:else if route.name === 'person'}
+      <Ready>{#key route.params.id}<Person id={route.params.id} />{/key}</Ready>
+    {:else if route.name === 'person-book'}
+      <Ready>{#key `${route.params.id}/${route.params.bookId}`}<PersonBook id={route.params.id} bookId={route.params.bookId} />{/key}</Ready>
     {:else if route.name === 'wishlist'}
       <Ready><Wishlist /></Ready>
     {:else if route.name === 'account'}

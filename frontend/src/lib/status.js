@@ -5,6 +5,7 @@ import CircleCheck from '@lucide/svelte/icons/circle-check'
 import CircleOff from '@lucide/svelte/icons/circle-off'
 import Clock from '@lucide/svelte/icons/clock'
 import Contrast from '@lucide/svelte/icons/contrast'
+import Circle from '@lucide/svelte/icons/circle'
 import Heart from '@lucide/svelte/icons/heart'
 import Tag from '@lucide/svelte/icons/tag'
 import { isWanted } from './browse.svelte.js'
@@ -27,6 +28,44 @@ export function wantPill(entry) {
     return null
   }
   return { kind: 'want', icon: Heart, text: entry.wanted === 'MAYBE' ? 'Maybe want it' : 'Want it' }
+}
+
+/** Someone else's progress, such as "12 of 20 pages", "Finished" or "Not started" for a book they own. */
+export function theirProgressPill(book, entry) {
+  switch (entry.progress) {
+    case 'IN_PROGRESS':
+      return { kind: 'progress', icon: Contrast, text: `${entry.pagesDone.length} of ${book.pageCount} pages` }
+    case 'FINISHED':
+      return { kind: 'done', icon: CircleCheck, text: 'Finished' }
+    default:
+      return entry.owned ? { kind: 'quiet', icon: Circle, text: 'Not started' } : null
+  }
+}
+
+/** Whether someone else owns a book, or else whether they want it. */
+export function theirOwnPill(entry) {
+  if (entry.owned) {
+    return { kind: 'owned', icon: Check, text: 'Owns it' }
+  }
+  switch (entry.wanted) {
+    case 'YES':
+      return { kind: 'want', icon: Heart, text: 'Wants it' }
+    case 'MAYBE':
+      return { kind: 'want', icon: Heart, text: 'Maybe wants it' }
+    case 'NO':
+      return { kind: 'quiet', icon: CircleOff, text: "Doesn't want it" }
+    default:
+      return null
+  }
+}
+
+/** How many books someone owns, is working on and has finished. */
+export function countPills({ owned, inProgress, finished }) {
+  return [
+    { kind: 'owned', icon: Check, text: `${owned} owned` },
+    { kind: 'progress', icon: Contrast, text: `${inProgress} in progress` },
+    { kind: 'done', icon: CircleCheck, text: `${finished} finished` },
+  ]
 }
 
 /** Coming soon or no longer sold. A book anyone can buy, or nobody has checked on, has no pill. */

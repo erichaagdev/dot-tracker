@@ -1,4 +1,5 @@
-/* One book and your copy of it, as its own screen on a phone and as the detail column beside the list from 900 px. */
+/* One book and your copy of it, as its own screen on a phone and as the detail column beside the list from 900 px.
+   Someone else's copy uses the same pieces in a read-only form: flat page dots and ratings as words. */
 .book-screen { display: flex; flex-direction: column; gap: 18px; padding: 6px var(--gutter) 32px; }
 
 .book-head { display: grid; gap: 10px; }
@@ -32,6 +33,14 @@
 .page:hover { border-color: var(--accent); }
 .page.done { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
+/* Someone else's pages, smaller and flat, so they read as a record rather than something to tap */
+.pages.read-only { grid-template-columns: repeat(10, 1fr); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pages.read-only .page { min-width: 0; border-color: transparent; background: var(--quiet-soft); font-size: var(--text-sm); }
+.pages.read-only .page.done { background: var(--accent); color: var(--on-accent); }
+
+.choice.read-only { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; }
+.choice.read-only + .choice.read-only { border-top: 1px solid var(--line); }
+
 .buy-list { display: grid; padding: 2px 14px; }
 .buy { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: var(--touch); padding: 6px 0; font-size: var(--text-base); }
 .buy + .buy { border-top: 1px solid var(--line); }
@@ -51,6 +60,7 @@
   resize: vertical;
 }
 .note:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+.note-hint { display: flex; align-items: center; gap: 6px; margin: -4px 0 0; color: var(--muted); font-size: var(--text-sm); }
 
 /* For admins, beside the back button on a phone and at the top of the desktop detail column */
 .edit-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; text-decoration: none; }
@@ -60,12 +70,16 @@
 .missing p { margin: 0; color: var(--muted); }
 
 @media (min-width: 900px) {
+  /* Only someone else's copy of a book opens as its own screen at this width */
+  .book-screen { max-width: var(--content-width); margin: 0 auto; padding: 32px var(--gutter) 48px; }
+
   .detail .edit-link { align-self: flex-end; min-height: 32px; margin: -8px 0 -6px; font-size: var(--text-md); }
   .detail .book-head .cover { height: 92px; }
   .detail .book-head h1 { font-size: var(--title-md); }
   .detail .section-title, .detail .choice-label { font: 700 var(--text-xs)/1.2 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
   .detail .pages { grid-template-columns: repeat(10, 1fr); gap: 6px; }
   .detail .page { min-width: 0; font-size: var(--text-xs); border-width: 1.5px; }
+  .detail .choice.read-only { padding: 8px 0; }
   .detail .seg button { min-height: 38px; font-size: var(--text-sm); }
   .detail .own { min-height: 36px; }
   .detail .choice { gap: 6px; }

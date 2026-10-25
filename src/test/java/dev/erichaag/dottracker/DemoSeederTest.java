@@ -26,6 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -55,7 +57,7 @@ class DemoSeederTest {
   Clock clock;
 
   @Test
-  void anaJoinsAsAnAdminAndBeaAsAMember() {
+  void anaJoinsAsAnAdminAndBeaAndCamAsMembers() {
     // When
     seed();
 
@@ -64,7 +66,8 @@ class DemoSeederTest {
       .extracting(Member::getEmail, Member::getDisplayName, Member::getRole)
       .containsExactly(
         tuple("ana@example.com", "Ana", Role.ADMIN),
-        tuple("bea@example.com", "Bea", Role.MEMBER)
+        tuple("bea@example.com", "Bea", Role.MEMBER),
+        tuple("cam@example.com", "Cam", Role.MEMBER)
       );
   }
 
@@ -153,22 +156,39 @@ class DemoSeederTest {
     assertThat(collection.values()).extracting(CollectionEntry::getWanted).contains(Wanted.YES, Wanted.MAYBE);
   }
 
-  @Test
-  void beasCollectionIsSmallerAndHasABookInProgressRatingsAndAWishlist() {
+  @ParameterizedTest
+  @ValueSource(strings = {"bea@example.com", "cam@example.com"})
+  void beasAndCamsCollectionsAreSmallerAndHaveABookInProgressRatingsAndAWishlist(String email) {
     // When
     seed();
 
     // Then
     var ana = collectionOf("ana@example.com");
-    var bea = collectionOf("bea@example.com");
-    assertThat(bea).isNotEmpty().hasSizeLessThan(ana.size());
-    assertThat(bea.values()).anySatisfy(entry -> assertThat(entry.getProgress()).isEqualTo(IN_PROGRESS));
-    assertThat(bea.values()).anySatisfy(entry -> {
+    var theirs = collectionOf(email);
+    assertThat(theirs).isNotEmpty().hasSizeLessThan(ana.size());
+    assertThat(theirs.values()).anySatisfy(entry -> assertThat(entry.getProgress()).isEqualTo(IN_PROGRESS));
+    assertThat(theirs.values()).anySatisfy(entry -> {
       assertThat(entry.getProgress()).isEqualTo(FINISHED);
       assertThat(entry.getRating()).isNotNull();
     });
-    assertThat(bea.values()).anySatisfy(entry -> assertThat(isOnWishlist(entry)).isTrue());
-    assertThat(bea.keySet()).isNotEqualTo(ana.keySet());
+    assertThat(theirs.values()).anySatisfy(entry -> assertThat(isOnWishlist(entry)).isTrue());
+    assertThat(theirs.keySet()).isNotEqualTo(ana.keySet());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Cabin Getaway", "Corner Cafe"})
+  void beaAndCamShareTheBooksAnaIsWorkingOnEachAtADifferentPoint(String name) {
+    // When
+    seed();
+
+    // Then
+    var others = List.of(
+      entry(collectionOf("bea@example.com"), name),
+      entry(collectionOf("cam@example.com"), name)
+    );
+    assertThat(others).extracting(CollectionEntry::getProgress).containsExactlyInAnyOrder(IN_PROGRESS, FINISHED);
+    assertThat(others).anySatisfy(entry -> assertThat(entry.getRating()).isNotNull());
+    assertThat(others).anySatisfy(entry -> assertThat(entry.getNotes()).isNotBlank());
   }
 
   @Test
@@ -176,7 +196,8 @@ class DemoSeederTest {
     // Given
     members.saveAll(List.of(
       new Member("ana@example.com", "Ana", Role.ADMIN, FixedClockConfiguration.NOW),
-      new Member("bea@example.com", "Bea", Role.MEMBER, FixedClockConfiguration.NOW)
+      new Member("bea@example.com", "Bea", Role.MEMBER, FixedClockConfiguration.NOW),
+      new Member("cam@example.com", "Cam", Role.MEMBER, FixedClockConfiguration.NOW)
     ));
 
     // When
@@ -185,6 +206,7 @@ class DemoSeederTest {
     // Then
     assertThat(collectionOf("ana@example.com")).containsKey("Cabin Getaway");
     assertThat(collectionOf("bea@example.com")).isNotEmpty();
+    assertThat(collectionOf("cam@example.com")).isNotEmpty();
   }
 
   @Test
@@ -193,12 +215,13 @@ class DemoSeederTest {
     seed();
     var ana = collectionOf("ana@example.com").size();
     var bea = collectionOf("bea@example.com").size();
+    var cam = collectionOf("cam@example.com").size();
 
     // When
     seed();
 
     // Then
-    assertThat(entries.count()).isEqualTo(ana + bea);
+    assertThat(entries.count()).isEqualTo(ana + bea + cam);
   }
 
   private void seed() {

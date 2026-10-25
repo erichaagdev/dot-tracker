@@ -2,6 +2,7 @@
 // sign-in screen.
 
 import * as api from './api.js'
+import { initialsOf } from './format.js'
 import { navigate } from './router.svelte.js'
 
 export const me = $state({ status: 'idle', member: null, problem: '' })
@@ -53,7 +54,5 @@ export function isAdmin() {
 
 /** One or two letters for the member's avatar, from their display name. */
 export function initials() {
-  const words = (me.member?.displayName ?? '').trim().split(/\s+/).filter(Boolean)
-  const letters = words.length > 1 ? words[0][0] + words.at(-1)[0] : (words[0]?.[0] ?? '?')
-  return letters.toUpperCase()
+  return initialsOf(me.member?.displayName)
 }

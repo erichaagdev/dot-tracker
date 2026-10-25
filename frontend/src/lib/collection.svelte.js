@@ -50,6 +50,11 @@ export function entryFor(bookId) {
   return collection.entries[bookId] ?? untouched(bookId)
 }
 
+/** Waits until every change to a book that has gone out so far has its answer. */
+export function settled(bookId) {
+  return queues[bookId] ?? Promise.resolve()
+}
+
 export function changeOwned(book, owned) {
   change(book, (entry) => ({ ...entry, owned }), () => api.put(path(book, 'owned'), { owned }))
 }
@@ -116,7 +121,8 @@ function path(book, what) {
   return `/api/collection/${book.id}/${what}`
 }
 
-function untouched(bookId) {
+/** An entry for a book nobody has changed anything about, as the backend would answer it. */
+export function untouched(bookId) {
   return {
     bookId,
     owned: false,

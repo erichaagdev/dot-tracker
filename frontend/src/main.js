@@ -9,6 +9,7 @@ import './styles/book.css'
 import './styles/shelf.css'
 import './styles/editor.css'
 import './styles/account.css'
+import './styles/people.css'
 import './styles/welcome.css'
 import App from './App.svelte'
 

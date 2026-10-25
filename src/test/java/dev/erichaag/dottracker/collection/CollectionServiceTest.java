@@ -6,6 +6,7 @@ import static dev.erichaag.dottracker.collection.Progress.IN_PROGRESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace.NONE;
 
@@ -15,6 +16,7 @@ import dev.erichaag.dottracker.book.BookRepository;
 import dev.erichaag.dottracker.book.BookService;
 import dev.erichaag.dottracker.book.BookService.BookDetails;
 import dev.erichaag.dottracker.book.ProductLineRepository;
+import dev.erichaag.dottracker.collection.CollectionService.Counts;
 import dev.erichaag.dottracker.collection.CollectionService.TrackedBook;
 import dev.erichaag.dottracker.member.Member;
 import dev.erichaag.dottracker.member.Member.Role;
@@ -129,6 +131,54 @@ class CollectionServiceTest {
       .extracting(tracked -> tracked.entry().getMemberId(), tracked -> tracked.entry().getBookId(),
         TrackedBook::pageCount)
       .containsExactlyInAnyOrder(tuple(bea, cabinGetaway, 20), tuple(bea, mandalas, 25));
+  }
+
+  @Test
+  void everyonesEntryForABookComesBackWithItsPageCount() {
+    // Given
+    var mandalas = book("Dot by Letter Large Dot", "Mandalas");
+    service.markPageDone(bea, mandalas, 25);
+    service.changeWanted(ana, mandalas, Wanted.YES);
+    service.changeOwned(ana, book("Dot by Letter", "Cabin Getaway"), true);
+
+    // When
+    var entries = service.findByBook(mandalas);
+
+    // Then
+    assertThat(entries)
+      .extracting(tracked -> tracked.entry().getMemberId(), tracked -> tracked.entry().getBookId(),
+        TrackedBook::pageCount)
+      .containsExactlyInAnyOrder(tuple(bea, mandalas, 25), tuple(ana, mandalas, 25));
+  }
+
+  @Test
+  void everyonesEntriesForABookThatIsGoneAreReported() {
+    // When / Then
+    assertThatExceptionOfType(NoSuchElementException.class)
+      .isThrownBy(() -> service.findByBook(UUID.randomUUID()))
+      .withMessage("That book isn't in the catalog anymore.");
+  }
+
+  @Test
+  void eachMembersBooksAreCountedByWhetherTheyOwnThemAreWorkingOnThemOrFinishedThem() {
+    // Given
+    service.changeOwned(bea, book("Dot by Letter", "Cozy Companions"), true);
+    service.markPageDone(bea, book("Dot by Letter", "Cabin Getaway"), 1);
+    service.changeProgress(bea, book("Dot by Letter", "Corner Cafe"), FINISHED);
+    var givenAway = book("Dot by Letter", "Americana");
+    service.changeProgress(bea, givenAway, FINISHED);
+    service.changeOwned(bea, givenAway, false);
+    service.changeWanted(bea, book("Dot by Letter", "Holiday Helpers"), Wanted.YES);
+    service.changeWanted(ana, book("Dot by Letter", "Holiday Helpers"), Wanted.MAYBE);
+
+    // When
+    var counts = service.countByMember();
+
+    // Then
+    assertThat(counts).containsOnly(
+      entry(bea, new Counts(3, 1, 2)),
+      entry(ana, Counts.NONE)
+    );
   }
 
   @Test

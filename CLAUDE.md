@@ -2,7 +2,7 @@
 
 Dot Tracker is a web app for a small group of friends to keep track of their Lifelines FlowArt books. The Spring Boot backend is Java 25 under `src/main/java/dev/erichaag/dottracker/`, the Svelte 5 frontend is in `frontend/`, and the data lives in Postgres 18. It runs on Google Cloud, on Cloud Run with Cloud SQL.
 
-`docs/plans/technical-plan.md` is the plan to build from, with the schema, the API, sign-in, the catalog seed, hosting and the build order. `docs/plans/overview.md` is the same plan for a non-technical reader, and `docs/mockups/index.html` shows every screen at phone and desktop sizes. Read the plan's section for the part you're changing before you start, and open the mockups in a browser before building or changing a screen. When a change alters something the plan describes, update the plan in the same change.
+`docs/plans/technical-plan.md` is the plan to build from, with the schema, the API, sign-in, the catalog seed, hosting and the build order. `docs/plans/overview.md` is the same plan for a non-technical reader, and `docs/mockups/index.html` shows the main screens at phone and desktop sizes. Read the plan's section for the part you're changing before you start, and open the mockups in a browser before building or changing a screen. When a change alters something the plan describes, update the plan in the same change.
 
 ## Who this app is for
 
@@ -13,7 +13,7 @@ The people using it are hobbyists on their phones, not developers. Every screen 
 - Run Gradle through `gain`, as in `gain build`, never through `./gradlew`. It prints a short summary and keeps the full output in `.gain/build-output.log`.
 - `gain build` compiles, builds the frontend and runs every test. Work isn't done until it passes.
 - Docker has to be running, because tests and local runs use Postgres in containers.
-- `gain bootTestRun` runs the app on port 8889 with the demo profile, a throwaway database and two demo members, `ana@example.com` as an admin and `bea@example.com` as a member, both with the password `demo`.
+- `gain bootTestRun` runs the app on port 8889 with the demo profile, a throwaway database and three demo members, `ana@example.com` as an admin and `bea@example.com` and `cam@example.com` as members, all with the password `demo`.
 - `gain bootRun` runs the app on port 8080 against the Postgres in `compose.yaml`, with a Google OAuth client read from a git-ignored `.env`.
 - `npm run dev` in `frontend` serves the frontend with hot reload on port 5173 and proxies to the demo app on port 8889.
 

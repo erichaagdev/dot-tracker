@@ -97,13 +97,13 @@ public class CollectionRestController {
 
   /**
    * A member's entry for a book. Its pages done are in order and leave out any beyond the book's page count, which an
-   * admin may have lowered after they were marked.
+   * admin may have lowered after they were marked. The people routes answer with the same shape for anyone's entry.
    */
   public record CollectionEntryResponse(UUID bookId, boolean owned, @Nullable Wanted wanted, Progress progress,
     List<Integer> pagesDone, Ratings ratings, @Nullable String notes, @Nullable LocalDate startedOn,
     @Nullable LocalDate finishedOn, Instant updatedAt) {
 
-    static CollectionEntryResponse from(TrackedBook tracked) {
+    public static CollectionEntryResponse from(TrackedBook tracked) {
       var entry = tracked.entry();
       return new CollectionEntryResponse(entry.getBookId(), entry.isOwned(), entry.getWanted(), entry.getProgress(),
         entry.getPagesDone(tracked.pageCount()), Ratings.from(entry), entry.getNotes(), entry.getStartedOn(),

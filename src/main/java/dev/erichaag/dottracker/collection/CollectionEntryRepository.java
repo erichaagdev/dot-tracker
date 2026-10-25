@@ -9,6 +9,8 @@ public interface CollectionEntryRepository extends JpaRepository<CollectionEntry
 
   List<CollectionEntry> findByMemberId(UUID memberId);
 
+  List<CollectionEntry> findByBookId(UUID bookId);
+
   Optional<CollectionEntry> findByMemberIdAndBookId(UUID memberId, UUID bookId);
 
   boolean existsByBookId(UUID bookId);

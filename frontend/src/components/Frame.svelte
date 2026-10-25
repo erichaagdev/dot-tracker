@@ -1,4 +1,5 @@
 <script>
+  import Contact from '@lucide/svelte/icons/contact'
   import Library from '@lucide/svelte/icons/library'
   import Heart from '@lucide/svelte/icons/heart'
   import Plus from '@lucide/svelte/icons/plus'
@@ -14,6 +15,7 @@
   const tabs = [
     { href: '/', label: 'Shelf', icon: Library, routes: ['shelf'] },
     { href: '/browse', label: 'Browse', icon: Search, routes: ['browse', 'book'] },
+    { href: '/people', label: 'People', icon: Contact, routes: ['people', 'person', 'person-book'] },
     { href: '/wishlist', label: 'Wishlist', icon: Heart, routes: ['wishlist'] },
   ]
 

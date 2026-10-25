@@ -1,0 +1,32 @@
+/* People and everyone's copies of a book: the list of the group, the title of someone's shelf, the group section
+   under your own copy of a book, and the banner and notes on someone else's copy. */
+.person-row .txt { gap: 4px; }
+.person-row .txt strong { line-height: 1.3; }
+.person-row .tags { align-items: center; }
+
+.person-title { display: flex; align-items: center; gap: 12px; }
+.person-title .avatar { width: 44px; height: 44px; font-size: var(--text-base); }
+
+.their-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--quiet-soft);
+}
+.their-copy .txt { flex: 1; display: grid; min-width: 0; }
+.their-copy small { color: var(--muted); font-size: var(--text-sm); }
+.their-copy a { display: inline-flex; align-items: center; min-height: var(--touch); font-weight: 700; text-align: right; text-decoration: none; }
+
+.their-ratings { padding: 2px 14px; }
+.their-summary { margin: 0; }
+
+.their-note { margin: 0; white-space: pre-wrap; font-size: var(--text-base); line-height: 1.45; }
+
+.their-links { display: flex; flex-wrap: wrap; gap: 0 18px; margin: 0; }
+.their-links a { display: inline-flex; align-items: center; min-height: var(--touch); font-weight: 700; text-decoration: none; }
+
+@media (min-width: 900px) {
+  .their-book .pages.read-only { grid-template-columns: repeat(10, minmax(0, 40px)); gap: 10px; }
+}

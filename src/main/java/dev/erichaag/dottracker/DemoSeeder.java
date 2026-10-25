@@ -25,9 +25,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * Seeds the demo profile's members, Ana as an admin and Bea as a member, who sign in with the password "demo", and
- * gives each of them a collection. Ana's is the one the mockups show, and Bea's is smaller. A database that already
- * has members keeps them, and one that already has collection entries keeps those.
+ * Seeds the demo profile's members, Ana as an admin and Bea and Cam as members, who sign in with the password "demo",
+ * and gives each of them a collection. Ana's is the one the mockups show. Bea's and Cam's are smaller and share Cabin
+ * Getaway and Corner Cafe with Ana, each at a different point, so a book's group section has people in it. A database
+ * that already has members keeps them, and one that already has collection entries keeps those.
  */
 @Component
 @Profile("demo")
@@ -64,12 +65,14 @@ public class DemoSeeder implements ApplicationRunner {
       var now = clock.instant();
       members.saveAll(List.of(
         new Member("ana@example.com", "Ana", Role.ADMIN, now),
-        new Member("bea@example.com", "Bea", Role.MEMBER, now)
+        new Member("bea@example.com", "Bea", Role.MEMBER, now),
+        new Member("cam@example.com", "Cam", Role.MEMBER, now)
       ));
     }
     if (entries.count() == 0) {
       members.findByEmail("ana@example.com").ifPresent(ana -> entries.saveAll(anasCollection(id(ana))));
       members.findByEmail("bea@example.com").ifPresent(bea -> entries.saveAll(beasCollection(id(bea))));
+      members.findByEmail("cam@example.com").ifPresent(cam -> entries.saveAll(camsCollection(id(cam))));
     }
   }
 
@@ -117,17 +120,41 @@ public class DemoSeeder implements ApplicationRunner {
   }
 
   private List<CollectionEntry> beasCollection(UUID bea) {
+    var cabinGetaway = finished(bea, DOT_BY_LETTER, "Cabin Getaway", 50, 16);
+    cabinGetaway.rate(5, 5, 4, clock);
+    cabinGetaway.changeNotes("Did the lake in blues instead of the greens it calls for. So glad I did.", clock);
+    var cornerCafe = working(bea, DOT_BY_LETTER, "Corner Cafe", 6, pages(1, 6));
+    cornerCafe.changeNotes("The pastry case page is my favorite so far.", clock);
     var prettyPetals = finished(bea, MINI, "Pretty Petals", 40, 25);
     prettyPetals.rate(5, 4, 5, clock);
     var sweaterWeather = finished(bea, DOT_BY_LETTER, "Sweater Weather", 25, 6);
     sweaterWeather.rate(3, null, null, clock);
     return List.of(
+      cabinGetaway,
+      cornerCafe,
       working(bea, TRACE_BY_LINE, "Brunch in Bloom", 8, List.of(1, 2, 3, 4, 6, 7)),
       prettyPetals,
       sweaterWeather,
       owned(bea, DOT_BY_LETTER, "Snowed In"),
-      wanted(bea, "Trace by Groove", "Desert Dreams", YES),
-      wanted(bea, DOT_BY_LETTER, "Cabin Getaway", MAYBE)
+      wanted(bea, "Trace by Groove", "Desert Dreams", YES)
+    );
+  }
+
+  private List<CollectionEntry> camsCollection(UUID cam) {
+    var cabinGetaway = working(cam, DOT_BY_LETTER, "Cabin Getaway", 14, pages(1, 12));
+    cabinGetaway.changeNotes("Taking this one slow, a page or two a night.", clock);
+    var cornerCafe = finished(cam, DOT_BY_LETTER, "Corner Cafe", 60, 33);
+    cornerCafe.rate(3, 4, 3, clock);
+    var intoTheGalaxy = finished(cam, "Dot by Letter Metallic", "Into the Galaxy", 45, 20);
+    intoTheGalaxy.rate(5, 5, 5, clock);
+    intoTheGalaxy.changeNotes("The metallic pens are worth it for this one.", clock);
+    return List.of(
+      cabinGetaway,
+      cornerCafe,
+      intoTheGalaxy,
+      owned(cam, DOT_BY_LETTER, "Americana"),
+      wanted(cam, MINI, "Cottage Garden", YES),
+      wanted(cam, DOT_BY_LETTER, "Holiday Helpers", MAYBE)
     );
   }
 

@@ -44,6 +44,23 @@ public class CollectionService {
       .toList();
   }
 
+  /** Every member's entry for a book, each with the book's page count. */
+  @Transactional(readOnly = true)
+  public List<TrackedBook> findByBook(UUID bookId) {
+    var book = books.getById(bookId);
+    return repository.findByBookId(bookId).stream()
+      .map(entry -> new TrackedBook(entry, book.getPageCount()))
+      .toList();
+  }
+
+  /** How many books each member owns, is working on and has finished, for every member with an entry. */
+  @Transactional(readOnly = true)
+  public Map<UUID, Counts> countByMember() {
+    return repository.findAll().stream()
+      .collect(Collectors.groupingBy(CollectionEntry::getMemberId,
+        Collectors.collectingAndThen(Collectors.toList(), Counts::of)));
+  }
+
   @Transactional
   public TrackedBook changeOwned(UUID memberId, UUID bookId, boolean owned) {
     var book = books.getById(bookId);
@@ -119,5 +136,18 @@ public class CollectionService {
 
   /** A member's entry for a book, with the book's page count, which decides which of the entry's pages count. */
   public record TrackedBook(CollectionEntry entry, int pageCount) {
+  }
+
+  /** How many books someone owns, is working on and has finished. */
+  public record Counts(long owned, long inProgress, long finished) {
+
+    public static final Counts NONE = new Counts(0, 0, 0);
+
+    static Counts of(List<CollectionEntry> entries) {
+      return new Counts(
+        entries.stream().filter(CollectionEntry::isOwned).count(),
+        entries.stream().filter(entry -> entry.getProgress() == Progress.IN_PROGRESS).count(),
+        entries.stream().filter(entry -> entry.getProgress() == Progress.FINISHED).count());
+    }
   }
 }

@@ -1,4 +1,4 @@
-// How prices, dates and product line colors show on screen.
+// How prices, dates, names and product line colors show on screen.
 
 const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -16,6 +16,13 @@ export function day(date) {
 export function isoDay(text) {
   const [year, month, date] = text.split('-').map(Number)
   return day(new Date(year, month - 1, date))
+}
+
+/** One or two letters for someone's avatar, from their display name. */
+export function initialsOf(name) {
+  const words = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  const letters = words.length > 1 ? words[0][0] + words.at(-1)[0] : (words[0]?.[0] ?? '?')
+  return letters.toUpperCase()
 }
 
 /** The class that gives a product line's covers and swatches its color family, such as line-trace for TRACE. */
