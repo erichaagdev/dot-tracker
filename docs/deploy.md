@@ -174,13 +174,13 @@ A new service account can take a few seconds to become visible to IAM. If a bind
 ```sh
 gcloud auth configure-docker $REGION-docker.pkg.dev
 IMAGE=$REGION-docker.pkg.dev/$PROJECT_ID/dot-tracker/dot-tracker
-gain bootBuildImage
+./gradlew bootBuildImage
 TAG=$(git rev-parse --short HEAD)
 docker tag dot-tracker:latest $IMAGE:$TAG
 docker push $IMAGE:$TAG
 ```
 
-`gain bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
+`./gradlew bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
 
 ### 10. Deploy
 
@@ -258,7 +258,7 @@ export CLOUDSDK_ACTIVE_CONFIG_NAME=dot-tracker
 PROJECT_ID=$(gcloud config get project)
 REGION=us-central1
 IMAGE=$REGION-docker.pkg.dev/$PROJECT_ID/dot-tracker/dot-tracker
-gain bootBuildImage
+./gradlew bootBuildImage
 TAG=$(git rev-parse --short HEAD)
 docker tag dot-tracker:latest $IMAGE:$TAG
 docker push $IMAGE:$TAG
@@ -296,7 +296,7 @@ gcloud run services update dot-tracker --region=$REGION --min-instances=1
 
 ## Signing in with Google locally
 
-`gain bootRun` runs the app on port 8080 against the Postgres in `compose.yaml`, with real Google sign-in through the same OAuth client, whose redirect URIs include `http://localhost:8080/login/oauth2/code/google`. It reads the client from a git-ignored `.env` at the repository root, with one `NAME=value` per line and no quotes.
+`./gradlew bootRun` runs the app on port 8080 against the Postgres in `compose.yaml`, with real Google sign-in through the same OAuth client, whose redirect URIs include `http://localhost:8080/login/oauth2/code/google`. It reads the client from a git-ignored `.env` at the repository root, with one `NAME=value` per line and no quotes.
 
 ```
 GOOGLE_CLIENT_ID=<client ID>
@@ -311,4 +311,4 @@ export CLOUDSDK_ACTIVE_CONFIG_NAME=dot-tracker
 gcloud secrets versions access latest --secret=google-client-secret
 ```
 
-Then run `gain bootRun` and open http://localhost:8080 in Chrome. Outside the demo profile the session cookie is `Secure`, and Chrome keeps a `Secure` cookie on `http://localhost`, where some browsers don't.
+Then run `./gradlew bootRun` and open http://localhost:8080 in Chrome. Outside the demo profile the session cookie is `Secure`, and Chrome keeps a `Secure` cookie on `http://localhost`, where some browsers don't.
