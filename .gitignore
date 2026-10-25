@@ -1,4 +1,8 @@
 .gradle/
 .idea/
 .kotlin/
+.gain/
 build/
+node_modules/
+.env
+.DS_Store

@@ -1,0 +1,43 @@
+[versions]
+java = "25"
+spring-boot = "4.1.2"
+errorprone = "2.51.0"
+errorprone-plugin = "5.1.1"
+nullaway = "0.14.3"
+postgres-socket-factory = "1.30.2"
+
+[libraries]
+
+platforms-spring-boot = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+
+spring-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-dataJpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
+spring-sessionJdbc = { module = "org.springframework.boot:spring-boot-starter-session-jdbc" }
+spring-dockerCompose = { module = "org.springframework.boot:spring-boot-docker-compose" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
+postgresql = { module = "org.postgresql:postgresql" }
+postgres-socketFactory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgres-socket-factory" }
+jspecify = { module = "org.jspecify:jspecify" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
+nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
+
+assertj = { module = "org.assertj:assertj-core" }
+spring-dataJpaTest = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test" }
+spring-webmvcTest = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
+spring-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[bundles]
+web = ["spring-webmvc", "spring-validation", "spring-actuator"]
+persistence = ["spring-dataJpa", "spring-flyway", "flyway-postgresql", "postgresql"]
+testcontainers = ["spring-testcontainers", "testcontainers-postgresql", "testcontainers-junit"]
+
+[plugins]
+errorprone = { id = "net.ltgt.errorprone", version.ref = "errorprone-plugin" }
+spring = { id = "org.springframework.boot", version.ref = "spring-boot" }
