@@ -39,7 +39,7 @@ Every runtime and library is on its latest stable release as of October 2026. Po
 build.gradle.kts, settings.gradle.kts, gradle/libs.versions.toml
 CLAUDE.md                         Conventions every change follows
 compose.yaml                      Postgres 18 for local runs
-inventory/                        The original spreadsheet tabs, plus catalog.csv once curated
+inventory/                        The original spreadsheet tabs and the curated catalog.csv
 docs/plans/                       This plan and the overview
 docs/mockups/index.html           Screen mockups
 src/main/java/dev/erichaag/dottracker/
@@ -48,7 +48,8 @@ src/main/java/dev/erichaag/dottracker/
   security/                       SecurityConfiguration, MemberOidcUserService, MemberOidcUser, CurrentMember, JoinController
   member/                         Member, its repository, service and controller
   invite/                         Invite, its repository, service and controller
-  book/                           ProductLine, Book, Listing, Availability, service, controller
+  book/                           ProductLine, Book, Listing, Availability, their repositories, BookService,
+                                  BookRestController, ProductLineRestController
   collection/                     CollectionEntry, Progress, Wanted, service, controller
 src/main/resources/
   application.yaml, application-demo.yaml
@@ -162,9 +163,11 @@ create table collection_entry (
 
 The unique index on product line and name, ignoring case, only stops the same book from being entered twice. Nothing references it, and the same name can appear in two lines, as "Animals" does in Color to Reveal and Dot by Letter Mini. `also_known_as` holds other names a book goes by, such as "Snowfall Serenity" for "Snowflake Serenity", and search matches on it.
 
-A listing is an `@Embeddable` record `Listing(String retailer, @Nullable Integer priceCents, @Nullable String url, boolean exclusive)` in an `@ElementCollection(fetch = EAGER)` with `@OrderColumn(name = "position")`. Retailers are free text, and the book editor suggests the names already in use. A book is a store exclusive when any of its listings is exclusive.
+A listing is an `@Embeddable` record `Listing(String retailer, @Nullable Integer priceCents, @Nullable String url, boolean exclusive)` in an `@ElementCollection(fetch = EAGER)` with `@CollectionTable(name = "book_listing")` and `@OrderColumn(name = "position")`. Retailers are free text, and the book editor suggests the names already in use. A book is a store exclusive when any of its listings is exclusive.
 
-`also_known_as` and `pages_done` map to `List<String>` and `List<Integer>` fields, which Hibernate 7 stores as Postgres arrays. `rating` is the overall score for how much someone liked the book, and it's the one lists and the shelf show. `design_rating` and `color_rating` are optional extras on the book screen. A null rating means not rated yet, and 0 is a real score.
+`Book` holds its product line as a plain `productLineId`, the way `Invite` holds member ids, and the frontend matches it to the product lines it loads. `Book` keeps its name trimmed and never blank, a page count above 0, and each other name trimmed and only once, ignoring case, leaving out blanks and the book's own name. `Listing` keeps its retailer trimmed and never blank and its price never negative. `ProductLine` keeps its name trimmed and never blank and a default page count above 0. A new book gets its line's `default_page_count` unless the admin gives it its own, and changing a line's default leaves its books' counts as they are.
+
+`also_known_as` and `pages_done` map to `List<String>` and `List<Integer>` fields, which Hibernate 7.4 stores as Postgres arrays with no annotation, since it maps a `List` of a basic type to the dialect's array type. `rating` is the overall score for how much someone liked the book, and it's the one lists and the shelf show. `design_rating` and `color_rating` are optional extras on the book screen. A null rating means not rated yet, and 0 is a real score.
 
 ## Collection rules
 
@@ -185,13 +188,13 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 |---|---|---|
 | `GET /api/me` | member | The signed-in member, with their id, email, display name, role and when they joined |
 | `POST /api/logout` | member | Ends the session |
-| `GET /api/books` | member | The whole catalog with listings. About a hundred rows, so the frontend filters and searches locally |
+| `GET /api/books` | member | The whole catalog with listings, by name. About a hundred rows, so the frontend filters and searches locally |
 | `GET /api/books/{id}` | member | One book |
-| `POST /api/books` | admin | Adds a book |
+| `POST /api/books` | admin | Adds a book and answers 201 |
 | `PUT /api/books/{id}` | admin | Edits a book |
-| `DELETE /api/books/{id}` | admin | Removes a book added by mistake. Refused once anyone has an entry for it, in favor of marking it retired |
+| `DELETE /api/books/{id}` | admin | Removes a book added by mistake with its listings, and answers 204 even when it's already gone |
 | `GET /api/product-lines` | member | Product lines in sort order |
-| `POST /api/product-lines`, `PUT /api/product-lines/{id}` | admin | Adds or edits a product line |
+| `POST /api/product-lines`, `PUT /api/product-lines/{id}` | admin | Adds a product line and answers 201, or edits one |
 | `GET /api/collection` | member | Every entry of the signed-in member |
 | `PUT /api/collection/{bookId}/owned` | member | Body `{"owned": true}` |
 | `PUT /api/collection/{bookId}/wanted` | member | Body `{"wanted": "MAYBE"}`, or null to clear |
@@ -208,6 +211,8 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 | `GET /join/{code}` | anyone | Starts sign-in with an invite, outside `/api` |
 
 Every collection write answers with the updated entry, and every write is idempotent, so a retried request does no harm. Admin routes carry `@PreAuthorize("hasRole('ADMIN')")` with `@EnableMethodSecurity`.
+
+A book comes back as `id`, `productLineId`, `name`, `alsoKnownAs`, `availability`, `pageCount`, `listings` and `exclusive`, where each listing has `retailer`, `priceCents`, `url` and `exclusive`, and the book's `exclusive` is true when any listing is. The frontend's search matches `alsoKnownAs` as well as the name. `POST` and `PUT /api/books` take the same fields except `id` and `exclusive`, and a missing `pageCount` means the product line's default. A product line comes back as `id`, `name`, `defaultPageCount` and `sortOrder`, and its `POST` and `PUT` take all of them but `id`. `BookService` refuses a second book with the same name in a product line, or a second product line with the same name, ignoring case, with a plain sentence before the unique indexes would. `GET /api/books` loads every book with its listings in one query through an `@EntityGraph` on the repository method, since an eager element collection otherwise costs a query per book.
 
 ## Sign-in and membership
 
@@ -232,17 +237,20 @@ CSRF protection uses `http.csrf(csrf -> csrf.spa())`, which `CsrfConfigurer` has
 
 The six CSVs in `inventory/` are exports of the spreadsheet's tabs. The main tab holds every book, so it is the source for the catalog, which comes to 93 books across 16 product lines. The seasonal tabs hold no book that the main tab lacks, and the app has no seasons, so they only contribute the few listings that the main tab doesn't have. The Miscellaneous tab holds candle diffusers, a journal set and a digital detox kit, which aren't books, so they stay out.
 
-Curating is a one-time step, and its output is `inventory/catalog.csv` with one row per book and the columns product line, name, also known as, availability, page count and listings. It applies these rules.
+Curating is a one-time step, and its output is `inventory/catalog.csv`, the file to review. It has one row per book with the columns `product_line`, `name`, `also_known_as`, `availability`, `page_count` and `listings`, grouped by product line in sort order and by name within a line. A cell with several other names or several listings separates them with "; ". A listing is the retailer, then its price in dollars when it has one, then the word `exclusive` when the store has the book to itself, so Cabin Getaway's listings read `Turner Toys $14.99; Target exclusive`. No cell holds a comma, so none is quoted. Curating applies these rules.
 
 - The natural key is product line plus name. The Winter tab's first header reads `Column 1` instead of `Type` and is read as `Type`.
+- A product line is named after the spreadsheet's `Type` without its " - ", so "Dot by Letter - Mini" is "Dot by Letter Mini", as the mockups show.
+- Product lines sort with Dot by Letter first, then its variants Mini, Large Dot, Metallic and Premium, then the other lines alphabetically, ignoring case.
 - Spelling fixes become the name, with the spreadsheet's spelling kept in `also_known_as` so search still finds it. These are "Pumpins & Pastures" to "Pumpkins & Pastures", "Museum Materpieces" to "Museum Masterpieces" and "Foilage and Flowers" to "Foliage and Flowers". "Lovestruck/Made with Love" becomes "Lovestruck", also known as "Made with Love" and "Lovestruck/Made with Love".
 - Two pairs of rows are one book each. The Dot by Letter Mini "Snowfall Serenity" is "Snowflake Serenity", and the Color to Reveal "Animals (Updated Version)" is "Animals". Each pair becomes one book under the name the Lifelines website uses, with the other name in `also_known_as`.
-- Each distinct website and price for a book becomes a listing, so the three Fall books that the Fall tab lists at Game Nerdz and the main tab lists at Lifelines get one listing for each. Prices are stored in cents.
-- Availability maps "Available on Lifelines" to `AVAILABLE`, "Coming Soon" to `COMING_SOON`, "Not Available" to `RETIRED`, and blank or "Purchased" to `UNKNOWN`. Two books override the mapping. Lovestruck is `RETIRED`, since it's gone from the Lifelines website, and Animals is `AVAILABLE`, since it's on it.
+- Each distinct website and price for a book becomes a listing, in the order they first appear reading the main tab and then the Fall, Non-Seasonal, Valentine's Day and Winter tabs. So the three Fall books that the Fall tab lists at Game Nerdz and the main tab lists at Lifelines get the Lifelines listing first and the Game Nerdz one second. Prices are stored in cents.
+- A row with a price but no website gets no listing, since a listing needs a retailer. Pogo Dot "Enchanted Forest" is the only such book, at $12.99 in the main tab and in the Non-Seasonal tab.
+- Availability maps "Available on Lifelines" to `AVAILABLE`, "Coming Soon" to `COMING_SOON`, "Not Available" to `RETIRED`, and blank or "Purchased" to `UNKNOWN`. It comes from the main tab alone, since the seasonal tabs only differ from it by being blank or saying "Purchased". A merged pair takes the one status its rows give, so Snowflake Serenity is `COMING_SOON`. Two books override the mapping. Lovestruck is `RETIRED`, since it's gone from the Lifelines website, and Animals is `AVAILABLE`, since it's on it.
 - Page count is 25 for Dot by Letter Large Dot and 20 for every other line, held in each product line's `default_page_count`. An admin can give a single book its own count in the app.
-- Corner Cafe, Cozy Companions and Cabin Getaway are Target exclusives. Corner Cafe and Cozy Companions already list Target, and that listing is marked exclusive. Cabin Getaway gets an exclusive Target listing beside its Turner Toys one.
+- Corner Cafe, Cozy Companions and Cabin Getaway are Target exclusives. Corner Cafe and Cozy Companions already list Target, and that listing is marked exclusive. Cabin Getaway gets an exclusive Target listing, without a price, after its Turner Toys one.
 
-`V2__catalog.sql` inserts the product lines, books and listings from `inventory/catalog.csv`. That migration never changes after it's applied, and every later catalog change goes through the app. `CatalogSeedTest` checks the migrated counts per product line and that every row of every inventory CSV outside the Miscellaneous tab matches a book by name or by an `also_known_as` entry.
+`V2__catalog.sql` is generated from `inventory/catalog.csv` rather than typed. It numbers the product lines from 1 in the order catalog.csv lists them, gives each line the page count its books share, and inserts the books and listings with prices in cents, leaving ids to the `uuidv7()` defaults and stamping `created_at` and `updated_at` with the time the migration runs. Once deployed, that migration never changes, and every later catalog change goes through the app. Until then a fix changes catalog.csv and `V2__catalog.sql` together, and `CatalogSeedTest` keeps them in step. It checks the product lines against catalog.csv in order and with their default page counts, the number of books in each line, that every row of every inventory CSV outside the Miscellaneous tab matches a book by product line and name or by an `also_known_as` entry, ignoring blank rows, and that the database matches catalog.csv book for book, with listings in order.
 
 The spreadsheet is a public one found online, so its personal columns seed nothing, and everyone starts with an empty shelf.
 
@@ -277,6 +285,7 @@ Docker Desktop has to be running for local runs and for tests. `compose.yaml` de
 - `MemberOidcUserServiceTest` covers each sign-in path, being an existing member by Google subject, an existing member by email whose Google account gets linked, accepting a valid invite, refusing an expired or used one, bootstrapping an admin, refusing an unverified email and refusing a stranger.
 - `MemberServiceTest` imports Spring Session's `JdbcHttpSessionConfiguration`, the configuration Spring Boot imports for the app, and checks that a change of role deletes that member's sessions in Postgres and leaves everyone else's.
 - `CatalogSeedTest` checks the seed as described above.
+- `BookServiceTest` turns on Hibernate's statistics to check that the whole catalog loads in one query.
 - `ApplicationContextTest` starts the whole app once against the test container.
 
 ## Hosting and deployment
@@ -301,7 +310,7 @@ The first version is built in seven phases, each finished, reviewed and passing 
 1. Foundation. Fill in `settings.gradle.kts`, `gradle/libs.versions.toml` and `build.gradle.kts` with the stack above, and add `mise.toml`, `compose.yaml`, `.gitignore` entries for `node_modules`, `.env` and `.gain`, and the `frontend` skeleton with its placeholder page. Add `DotTrackerApplication`, `ClockConfiguration`, `RestExceptionHandler`, `SpaForwardingController`, `application.yaml`, `V1__schema.sql`, `PostgresTestConfiguration` and `ApplicationContextTest`. The jar serves the placeholder page from `/`.
 2. Sign-in and membership. Build `SecurityConfiguration`, `MemberOidcUserService`, `CurrentMember`, the member and invite domains with their controllers, `/join/{code}` and Spring Session, with their tests. Add the demo profile's form login and members, and `TestDotTrackerApplication`.
 3. The catalog. Curate `inventory/catalog.csv` by the rules above, write `V2__catalog.sql` and `CatalogSeedTest`, and build the book domain, with its entities, repositories, `BookService` and the controllers for books and product lines, with their tests.
-4. Collections. Build the collection domain, with `CollectionEntry` and the collection rules' unit tests, `CollectionService`, `CollectionRestController` and their tests. Add `DemoSeeder`'s collections for the demo members.
+4. Collections. Build the collection domain, with `CollectionEntry` and the collection rules' unit tests, `CollectionService`, `CollectionRestController` and their tests. Add `DemoSeeder`'s collections for the demo members. Make `DELETE /api/books/{id}` refuse a book once anyone has an entry for it, in favor of marking it retired, since until then it deletes any book.
 5. The frontend foundation and the main screens. Add tokens and fonts from the mockups, the responsive frame with its tab bar and top bar, the router, `api.js`, the stores and the sign-in and welcome screens, then the Browse and Book screens with the page grid, ratings, notes and the desktop list-and-detail layout.
 6. The remaining screens. Build Shelf, Wishlist and Account, and the admin screens, which are the book editor and the Group screen with invites and roles.
 7. Deploy. Write `docs/deploy.md`, create the Google Cloud resources and the Google client, sign in as the first admin and walk through every screen on a phone and a desktop. Then she invites her friends.

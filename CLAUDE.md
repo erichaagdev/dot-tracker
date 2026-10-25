@@ -36,6 +36,7 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 - Every table's primary key is `id uuid primary key default uuidv7()`, and entities map it as `@Id @UuidGenerator(style = VERSION_7) private @Nullable UUID id`. Never key or reference a row by a name or any other value a person can change.
 - Every top-level entity has `@Version private @Nullable Long version`, so a stale copy saved over a newer one fails with `ObjectOptimisticLockingFailureException`.
 - Entities have a protected no-argument constructor and guard their own invariants, such as trimming names, range-checking ratings and keeping finished pages sorted and within the page count, so no caller can break them. Change state through entity methods and let the service's transaction flush it.
+- An entity refers to another entity by its id, as a plain `UUID` field such as `Book.productLineId` or `Invite.createdBy`, never through `@ManyToOne`. Each service loads what it needs inside its own transaction, so nothing loads lazily after the transaction ends.
 - A value that belongs to one parent and has no identity of its own, such as a book's listing, is an `@Embeddable` record in an `@ElementCollection(fetch = EAGER)` list with `@OrderColumn`.
 - Services own transactions with `@Transactional`, and read-only methods use `@Transactional(readOnly = true)`. Controllers call services, never repositories, and entities never leave the service layer.
 - `spring.jpa.open-in-view` is off, so everything a response needs is loaded inside the service's transaction.

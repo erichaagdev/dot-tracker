@@ -30,6 +30,7 @@ The list comes from the spreadsheet found online, tidied up in a few ways.
 - Snowfall Serenity and Snowflake Serenity are one mini, called Snowflake Serenity like on the Lifelines website.
 - Animals and Animals (Updated Version) are one Color to Reveal book, called Animals.
 - Lovestruck/Made with Love is one book called Lovestruck, marked as no longer sold since it's gone from the website.
+- Enchanted Forest has a price in the spreadsheet but no store, so it starts without a place to buy it until you add one.
 - Corner Cafe, Cozy Companions and Cabin Getaway are Target exclusives. Other stores likely have exclusives too, and you can mark any book as one when you hear about it.
 - The candle diffusers, journal set and detox kit from the Miscellaneous tab are left out, since they aren't books.
 
