@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dot Tracker Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap">
+<style>
+/* Layout: a short page header, then phone screens in a wrapping row and one desktop window below.
+   Each screen is the real app at rest on a faint dotted paper ground. */
+:root {
+  --paper: #F3F4F8;
+  --paper-dot: #D6DAE5;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8FB;
+  --ink: #1C1F2E;
+  --muted: #5B6075;
+  --line: #E1E4ED;
+  --accent: #0E7774;
+  --accent-soft: #DCF0EE;
+  --on-accent: #FFFFFF;
+  --progress: #9A5700;
+  --progress-soft: #FBE9D0;
+  --done: #2B7638;
+  --done-soft: #DCEFDF;
+  --want: #AE2A65;
+  --want-soft: #F8DDE9;
+  --quiet: #636879;
+  --quiet-soft: #E8E9EF;
+  --bezel: #1A1C26;
+
+  --l-dbl: #E2552B;
+  --l-mini: #E09A12;
+  --l-trace: #1F9A9A;
+  --l-reveal: #D9488F;
+  --l-premium: #5B4AA8;
+
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", -apple-system, "Segoe UI", system-ui, sans-serif;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #11131A; --paper-dot: #252935; --surface: #1B1E28; --surface-2: #161922; --ink: #ECEEF4; --muted: #A3A8BA; --line: #2E3241;
+    --accent: #4FC3BD; --accent-soft: #143937; --on-accent: #08201F; --progress: #F2AE55; --progress-soft: #3A2A12; --done: #74CB83; --done-soft: #183320;
+    --want: #F27DB1; --want-soft: #3C1B2B; --quiet: #9CA1B3; --quiet-soft: #2A2D39; --bezel: #3A3F51;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #11131A; --paper-dot: #252935; --surface: #1B1E28; --surface-2: #161922; --ink: #ECEEF4; --muted: #A3A8BA; --line: #2E3241;
+  --accent: #4FC3BD; --accent-soft: #143937; --on-accent: #08201F; --progress: #F2AE55; --progress-soft: #3A2A12; --done: #74CB83; --done-soft: #183320;
+  --want: #F27DB1; --want-soft: #3C1B2B; --quiet: #9CA1B3; --quiet-soft: #2A2D39; --bezel: #3A3F51;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper) radial-gradient(circle, var(--paper-dot) 1px, transparent 1.5px) 0 0 / 22px 22px;
+  color: var(--ink);
+  font: 16px/1.5 var(--font-body);
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .page, .seg button, .own, .chip { transition: background-color .15s, color .15s, border-color .15s; }
+}
+
+.ic { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic.sm { width: 14px; height: 14px; }
+
+/* Page frame */
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 56px;
+}
+.wrap > *, .mock-section { min-width: 0; }
+.doc-head { display: grid; gap: 14px; max-width: 68ch; }
+.doc-head h1 { margin: 0; font: 800 clamp(30px, 6vw, 44px)/1.05 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+.doc-head p { margin: 0; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+.mockups { display: grid; gap: 64px; }
+.mock-section { display: grid; gap: 24px; }
+.mock-section > h2 { margin: 0; font: 700 24px/1.2 var(--font-display); letter-spacing: -0.01em; }
+.mock-section > p { margin: -12px 0 0; color: var(--muted); max-width: 68ch; }
+
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 48px 32px; align-items: start; }
+.mock { margin: 0; display: grid; gap: 16px; justify-items: center; min-width: 0; }
+.mock figcaption { max-width: 372px; width: 100%; display: grid; gap: 4px; }
+.mock figcaption h3 { margin: 0; font: 700 18px/1.3 var(--font-display); }
+.mock figcaption p { margin: 0; color: var(--muted); font-size: 15px; }
+
+/* Phone device */
+.device { width: 100%; max-width: 372px; border-radius: 46px; padding: 10px; background: var(--bezel); box-shadow: 0 18px 40px -18px rgb(20 22 40 / .45); }
+.screen { height: 760px; border-radius: 36px; overflow: hidden; background: var(--surface-2); display: flex; flex-direction: column; font-size: 15px; }
+.statusbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 26px 4px; font: 700 14px var(--font-body); font-variant-numeric: tabular-nums; }
+.statusbar .notch { width: 92px; height: 24px; border-radius: 14px; background: var(--bezel); }
+.statusbar .bat { width: 24px; height: 11px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; }
+.statusbar .bat::after { content: ""; position: absolute; inset: 1.5px 6px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
+
+.app-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 18px 6px; }
+.brand { display: flex; align-items: center; gap: 8px; font: 800 17px var(--font-display); letter-spacing: -0.01em; }
+.brand-dots { display: inline-grid; grid-template-columns: repeat(3, 9px); gap: 2px; }
+.brand-dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.brand-dots i:nth-child(1) { background: var(--l-dbl); }
+.brand-dots i:nth-child(2) { background: var(--l-mini); }
+.brand-dots i:nth-child(3) { background: var(--l-trace); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 13px var(--font-body); }
+.back { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 8px 0 2px; border: 0; background: none; color: var(--accent); font-weight: 700; }
+
+.app-body { flex: 1; min-height: 0; overflow: hidden; padding: 6px 18px 16px; display: flex; flex-direction: column; gap: 18px; }
+.app-body h1 { margin: 0; font: 800 28px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.app-body h2 { margin: 0; font: 700 13px/1.2 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.block { display: grid; gap: 10px; }
+.subtle { color: var(--muted); font-size: 14px; }
+
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 8px 6px 22px; }
+.tab { display: grid; justify-items: center; gap: 3px; min-height: 48px; padding-top: 4px; border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 500; }
+.tab .ic { width: 22px; height: 22px; }
+.tab.on { color: var(--accent); font-weight: 700; }
+
+/* Shared pieces */
+.cover {
+  --c: var(--l-dbl);
+  width: 46px; aspect-ratio: 1; flex: none; border-radius: 11px;
+  background:
+    radial-gradient(circle, var(--c) 0 2.3px, transparent 2.8px) 0 0 / 9px 9px,
+    color-mix(in oklab, var(--c) 16%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--c) 40%, transparent);
+}
+.cover.lg { width: 100%; aspect-ratio: auto; height: 112px; border-radius: var(--r-md); background-size: 13px 13px, auto; background-image: radial-gradient(circle, var(--c) 0 3.4px, transparent 4px); }
+.mini { --c: var(--l-mini); } .trace { --c: var(--l-trace); } .reveal { --c: var(--l-reveal); } .premium { --c: var(--l-premium); } .dbl { --c: var(--l-dbl); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 999px; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.pill.owned { background: var(--accent-soft); color: var(--accent); }
+.pill.progress { background: var(--progress-soft); color: var(--progress); }
+.pill.done { background: var(--done-soft); color: var(--done); }
+.pill.want { background: var(--want-soft); color: var(--want); }
+.pill.quiet { background: var(--quiet-soft); color: var(--quiet); }
+.pill.excl { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; }
+
+.dots { display: flex; flex-wrap: wrap; gap: 4px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: block; }
+.dots i.on { background: var(--accent); }
+
+.own { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px 0 9px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 700; color: var(--muted); }
+.own .box { width: 20px; height: 20px; border-radius: 6px; border: 2px solid currentColor; display: grid; place-items: center; }
+.own .box .ic { width: 14px; height: 14px; stroke-width: 3; opacity: 0; }
+.own.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.own.on .box { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.own.on .box .ic { opacity: 1; }
+
+.seg { display: flex; border: 1.5px solid var(--line); border-radius: 11px; background: var(--surface); padding: 3px; gap: 3px; }
+.seg button { flex: 1; min-height: 38px; border: 0; border-radius: 8px; background: none; font-size: 14px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.seg button.on { background: var(--accent); color: var(--on-accent); }
+
+.field { display: grid; gap: 6px; }
+.field > span { font-size: 14px; font-weight: 700; }
+.input { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+.input .ic { color: var(--muted); }
+.input.ph { color: var(--muted); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 18px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.btn.ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--line); }
+
+/* Shelf */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; display: grid; gap: 2px; }
+.stat b { font: 800 24px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.working { display: grid; gap: 10px; }
+.work { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
+.work .cover { grid-row: span 2; }
+.work strong { font-size: 16px; }
+.work .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.work .dots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px; }
+.work .dots i { width: 100%; height: auto; aspect-ratio: 1; }
+.list-sm { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 4px 12px; }
+.list-sm .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.list-sm .row + .row { border-top: 1px solid var(--line); }
+.list-sm .cover { width: 34px; border-radius: 8px; background-size: 7px 7px, auto; }
+.list-sm .txt { flex: 1; min-width: 0; display: grid; }
+.list-sm .txt small { color: var(--muted); font-size: 13px; }
+.score { font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.score b { color: var(--ink); }
+
+/* Browse */
+.search { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 14px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); color: var(--muted); }
+.chips { display: flex; gap: 6px; overflow: hidden; }
+.chip { flex: none; min-height: 36px; padding: 0 13px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 700; color: var(--muted); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.selects { display: flex; gap: 8px; }
+.select { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 40px; padding: 0 10px 0 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font-size: 14px; }
+.select b { font-weight: 700; }
+.select.set { border-color: var(--accent); background: var(--accent-soft); }
+.results { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--muted); }
+.group-h { margin: 4px 0 -2px; font-size: 13px; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.group-h i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); display: block; }
+.brow { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.brow .txt { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.brow .txt strong { font-size: 15px; line-height: 1.25; }
+.brow .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.brow .own { padding: 0 9px; min-height: 36px; }
+.brow .own .lbl { display: none; }
+
+/* Book */
+.book-head { display: grid; gap: 10px; }
+.book-head h1 { font-size: 30px; }
+.book-head .meta { color: var(--muted); font-size: 15px; }
+.book-head .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.buy { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+.buy span { color: var(--muted); }
+.mine { display: grid; gap: 14px; }
+.line-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+.page { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); color: var(--muted); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; display: grid; place-items: center; padding: 0; }
+.page.done { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rate { display: grid; gap: 6px; }
+.rate .line-h span { font-weight: 700; }
+.rate .line-h small { color: var(--muted); font-size: 13px; }
+.note { min-height: 64px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font-size: 14px; }
+
+/* Desktop */
+.window-scroll { overflow-x: auto; padding-bottom: 8px; }
+.window { width: 1180px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); box-shadow: 0 24px 50px -24px rgb(20 22 40 / .45); }
+.titlebar { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.titlebar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); display: block; }
+.titlebar span { margin-left: 18px; font-size: 13px; color: var(--muted); }
+.topnav { display: flex; align-items: center; gap: 6px; height: 62px; padding: 0 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topnav .brand { margin-right: 22px; }
+.topnav .end { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.topnav .sep { width: 1px; height: 24px; background: var(--line); margin: 0 6px; }
+.nav { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: var(--muted); font-weight: 700; border: 0; background: none; }
+.nav.on { background: var(--accent-soft); color: var(--accent); }
+.desk { display: grid; grid-template-columns: 224px 1fr 372px; height: 760px; font-size: 15px; }
+.filters { border-right: 1px solid var(--line); padding: 18px 16px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+.filters .search { min-height: 40px; }
+.fgroup { display: grid; gap: 2px; }
+.fgroup h3 { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.fopt { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border-radius: 8px; font-size: 14px; }
+.fopt .n { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fopt.on { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--accent); font-weight: 700; }
+.fopt .sw { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.listing { padding: 18px 22px; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+.listing-h { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.listing-h h1 { margin: 0; font: 800 26px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.listing-h .subtle { margin-top: 4px; }
+.table { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.trow { display: grid; grid-template-columns: 40px 1fr 160px 74px; gap: 14px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--line); min-height: 60px; }
+.trow .st { display: grid; gap: 3px; justify-items: start; }
+.actionbar { background: var(--surface); border-top: 1px solid var(--line); padding: 12px 18px 26px; display: grid; }
+.trow:first-child { border-top: 0; }
+.trow.head { min-height: 36px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+.trow.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.trow .cover { width: 40px; border-radius: 9px; background-size: 8px 8px, auto; }
+.trow .txt { display: grid; min-width: 0; }
+.trow .txt small { color: var(--muted); font-size: 13px; }
+.trow .own { min-height: 34px; padding: 0 8px; }
+.trow .own .lbl { display: none; }
+.detail { background: var(--surface); border-left: 1px solid var(--line); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+.detail .cover.lg { height: 92px; }
+.detail .book-head h1 { margin: 0; font: 800 26px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.detail .pages { grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.detail .page { font-size: 12px; border-width: 1.5px; }
+.detail h2 { margin: 0; font: 700 12px/1.2 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.detail .seg button { min-height: 32px; font-size: 13px; }
+.detail .own { min-height: 36px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shelf" viewBox="0 0 24 24"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-done" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-half" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5a9.5 9.5 0 0 1 0 19z" fill="currentColor"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M3 9h18l-2-5H5z"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="doc-head">
+    <h1>Dot Tracker mockups</h1>
+    <p>These are the screens of the first version, drawn the way they'd look on a phone and on a computer. The book names come from the spreadsheet. The checkmarks, progress and ratings are made up to show how things look once someone has used the app for a while. Tap a page number, a rating or an Own box to try it.</p>
+    <div class="legend">
+      <span class="pill owned"><svg class="ic sm"><use href="#i-check"/></svg>Owned</span>
+      <span class="pill progress"><svg class="ic sm"><use href="#i-half"/></svg>In progress</span>
+      <span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span>
+      <span class="pill want"><svg class="ic sm"><use href="#i-heart"/></svg>Want it</span>
+      <span class="pill quiet"><svg class="ic sm"><use href="#i-clock"/></svg>Coming soon</span>
+      <span class="pill excl"><svg class="ic sm"><use href="#i-tag"/></svg>Store exclusive</span>
+    </div>
+  </header>
+
+  <main class="mockups">
+  <section class="mock-section" id="phone">
+    <h2>On a phone</h2>
+    <p>Four tabs along the bottom take you to your shelf, the full list of books, your wishlist and your account. Opening a book shows everything about it on one screen.</p>
+    <div class="phones">
+
+      <!-- Shelf -->
+      <figure class="mock">
+        <div class="device"><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
+          <div class="app-top">
+            <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <span class="avatar">JR</span>
+          </div>
+          <div class="app-body">
+            <h1>Your shelf</h1>
+            <div class="stats">
+              <div class="stat"><b>38</b><span>owned of 93</span></div>
+              <div class="stat"><b>12</b><span>finished</span></div>
+              <div class="stat"><b>9</b><span>on wishlist</span></div>
+            </div>
+            <div class="block">
+              <h2>Working on</h2>
+              <div class="working">
+                <div class="card work">
+                  <span class="cover dbl"></span>
+                  <strong>Cabin Getaway</strong>
+                  <span class="meta"><span>Dot by Letter</span><span>15 of 20 pages</span></span>
+                  <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>
+                </div>
+                <div class="card work">
+                  <span class="cover dbl"></span>
+                  <strong>Corner Cafe</strong>
+                  <span class="meta"><span>Dot by Letter</span><span>9 of 20 pages</span></span>
+                  <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="block">
+              <h2>Recently finished</h2>
+              <div class="list-sm">
+                <div class="row"><span class="cover trace"></span><span class="txt"><strong>Gingerbread Delight</strong><small>Trace by Line</small></span><span class="score">Rated <b>5</b></span></div>
+                <div class="row"><span class="cover reveal"></span><span class="txt"><strong>Home For The Holidays</strong><small>Color to Reveal Scented</small></span><span class="score">Rated <b>4</b></span></div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <button type="button" class="tab on"><svg class="ic"><use href="#i-shelf"/></svg>Shelf</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-search"/></svg>Browse</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-heart"/></svg>Wishlist</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-user"/></svg>Account</button>
+          </nav>
+        </div></div>
+        <figcaption>
+          <h3>Your shelf</h3>
+          <p>The home screen. It shows the books you're in the middle of with how many pages you've done, what you finished lately and how you rated it, and a quick count of your collection.</p>
+        </figcaption>
+      </figure>
+
+      <!-- Browse -->
+      <figure class="mock">
+        <div class="device"><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
+          <div class="app-top">
+            <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <span class="avatar">JR</span>
+          </div>
+          <div class="app-body" style="gap:12px">
+            <div class="search"><svg class="ic"><use href="#i-search"/></svg>Search 93 books</div>
+            <div class="chips">
+              <button type="button" class="chip on">All</button>
+              <button type="button" class="chip">Own</button>
+              <button type="button" class="chip">Want</button>
+              <button type="button" class="chip">In progress</button>
+              <button type="button" class="chip">Finished</button>
+            </div>
+            <div class="selects">
+              <span class="select set"><span>Line <b>Dot by Letter Mini</b></span><svg class="ic sm"><use href="#i-down"/></svg></span>
+            </div>
+            <div class="results"><span>24 books</span><span>A to Z</span></div>
+            <div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Animals</strong><span class="subtle">Not on your list</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Cafe Comforts</strong><span class="tags"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Candy</strong><span class="subtle">Not on your list</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Coastal Calm</strong><span class="tags"><span class="pill want"><svg class="ic sm"><use href="#i-heart"/></svg>Want it</span><span class="pill quiet"><svg class="ic sm"><use href="#i-clock"/></svg>Coming soon</span></span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Cottage Garden</strong><span class="tags"><span class="pill progress"><svg class="ic sm"><use href="#i-half"/></svg>6 of 20</span></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Deck the Halls</strong><span class="subtle">Not on your list</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Enchanted Magic</strong><span class="tags"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="brow"><span class="cover mini"></span><span class="txt"><strong>Floral</strong><span class="subtle">Not on your list</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <button type="button" class="tab"><svg class="ic"><use href="#i-shelf"/></svg>Shelf</button>
+            <button type="button" class="tab on"><svg class="ic"><use href="#i-search"/></svg>Browse</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-heart"/></svg>Wishlist</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-user"/></svg>Account</button>
+          </nav>
+        </div></div>
+        <figcaption>
+          <h3>Browse every book</h3>
+          <p>Every book in one list. Search by name, or narrow the list by product line and what you own, want, are working on or have finished. Tap Own to check a book off without opening it.</p>
+        </figcaption>
+      </figure>
+
+      <!-- Book -->
+      <figure class="mock">
+        <div class="device"><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
+          <div class="app-top">
+            <button type="button" class="back"><svg class="ic"><use href="#i-back"/></svg>Browse</button>
+          </div>
+          <div class="app-body" style="gap:16px" data-book>
+            <div class="book-head">
+              <h1>Corner Cafe</h1>
+              <span class="meta">Dot by Letter · 20 pages</span>
+              <span class="tags"><span class="pill excl"><svg class="ic sm"><use href="#i-tag"/></svg>Target exclusive</span><span class="pill owned"><svg class="ic sm"><use href="#i-check"/></svg>Owned</span></span>
+            </div>
+            <div class="mine">
+              <div class="seg" role="group" aria-label="Progress">
+                <button type="button">Not started</button>
+                <button type="button" class="on">In progress</button>
+                <button type="button">Finished</button>
+              </div>
+              <div class="block">
+                <div class="line-h"><h2>Pages</h2><span class="subtle"><b data-count>9</b> of 20 done</span></div>
+                <div class="pages" data-pages>
+                  <button type="button" class="page done">1</button><button type="button" class="page done">2</button><button type="button" class="page done">3</button><button type="button" class="page done">4</button><button type="button" class="page done">5</button>
+                  <button type="button" class="page">6</button><button type="button" class="page done">7</button><button type="button" class="page done">8</button><button type="button" class="page">9</button><button type="button" class="page done">10</button>
+                  <button type="button" class="page">11</button><button type="button" class="page done">12</button><button type="button" class="page">13</button><button type="button" class="page">14</button><button type="button" class="page">15</button>
+                  <button type="button" class="page">16</button><button type="button" class="page">17</button><button type="button" class="page">18</button><button type="button" class="page">19</button><button type="button" class="page">20</button>
+                </div>
+              </div>
+              <div class="rate">
+                <div class="line-h"><span>Overall</span><small>How much you liked the book</small></div>
+                <div class="seg" role="group" aria-label="Overall rating"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button" class="on">5</button></div>
+              </div>
+              <div class="rate">
+                <div class="line-h"><span>Designs</span><small>Optional</small></div>
+                <div class="seg" role="group" aria-label="Designs rating"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button" class="on">5</button></div>
+              </div>
+              <div class="rate">
+                <div class="line-h"><span>Colors</span><small>Optional</small></div>
+                <div class="seg" role="group" aria-label="Colors rating"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button" class="on">4</button><button type="button">5</button></div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <button type="button" class="tab"><svg class="ic"><use href="#i-shelf"/></svg>Shelf</button>
+            <button type="button" class="tab on"><svg class="ic"><use href="#i-search"/></svg>Browse</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-heart"/></svg>Wishlist</button>
+            <button type="button" class="tab"><svg class="ic"><use href="#i-user"/></svg>Account</button>
+          </nav>
+        </div></div>
+        <figcaption>
+          <h3>One book</h3>
+          <p>Everything about one book and your copy of it. Tap a page number when you finish that page, in any order. Rate the book overall, and the designs and colors too if you like. Below this, out of view, are where to buy it and a box for your own notes.</p>
+        </figcaption>
+      </figure>
+
+      <!-- Edit book -->
+      <figure class="mock">
+        <div class="device"><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
+          <div class="app-top">
+            <button type="button" class="back"><svg class="ic"><use href="#i-back"/></svg>Winter's Glow</button>
+          </div>
+          <div class="app-body" style="gap:14px">
+            <h1>Edit book</h1>
+            <label class="field"><span>Name</span><span class="input">Winter's Glow</span></label>
+            <div class="selects">
+              <label class="field" style="flex:1"><span>Product line</span><span class="input">Dot by Letter<svg class="ic sm"><use href="#i-down"/></svg></span></label>
+              <label class="field" style="width:96px"><span>Pages</span><span class="input">20</span></label>
+            </div>
+            <div class="field"><span>Can you buy it?</span>
+              <div class="seg"><button type="button">Available</button><button type="button" class="on">Coming soon</button><button type="button">Retired</button></div>
+            </div>
+            <div class="field"><span>Where to buy</span>
+              <div class="card" style="display:grid;gap:10px;padding:12px">
+                <div class="buy"><strong>Turner Toys</strong><span>$14.99</span></div>
+                <button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Only sold here</button>
+              </div>
+              <button type="button" class="btn ghost"><svg class="ic"><use href="#i-plus"/></svg>Add a store</button>
+            </div>
+          </div>
+          <div class="actionbar"><button type="button" class="btn">Save changes</button></div>
+        </div></div>
+        <figcaption>
+          <h3>Add or edit a book</h3>
+          <p>Only for whoever looks after the list. When a new book comes out, one stops being sold or a page count is wrong, this is where it's added or changed, so the list stays current for everyone.</p>
+        </figcaption>
+      </figure>
+
+      <!-- Join -->
+      <figure class="mock">
+        <div class="device"><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
+          <div class="app-body" style="justify-content:center;gap:22px;padding:24px 26px 40px">
+            <span class="brand" style="font-size:22px"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <h1 style="font-size:32px">You're invited to Dot Tracker</h1>
+            <p style="margin:0;color:var(--muted)">Keep track of your Lifelines FlowArt books. Check off what you own, follow your pages as you go and rate what you finish.</p>
+            <span class="cover lg" style="height:150px;--c:var(--l-trace)"></span>
+            <button type="button" class="btn" style="min-height:52px">Continue with Google</button>
+            <p class="subtle" style="margin:0;text-align:center">This invite works once and expires on November 8.</p>
+          </div>
+        </div></div>
+        <figcaption>
+          <h3>Joining</h3>
+          <p>A friend gets a link by text. They tap it, sign in with their Google account and they're in, with no password to make up or forget.</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <section class="mock-section" id="desktop">
+    <h2>On a computer</h2>
+    <p>The same app on a wider screen puts the filters, the list and the open book side by side, so you can go down the list checking things off without leaving it.</p>
+    <div class="window-scroll">
+      <div class="window">
+        <div class="titlebar"><i></i><i></i><i></i><span>Dot Tracker</span></div>
+        <header class="topnav">
+          <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+          <button type="button" class="nav"><svg class="ic"><use href="#i-shelf"/></svg>Shelf</button>
+          <button type="button" class="nav on"><svg class="ic"><use href="#i-search"/></svg>Browse</button>
+          <button type="button" class="nav"><svg class="ic"><use href="#i-heart"/></svg>Wishlist</button>
+          <span class="end">
+            <button type="button" class="nav"><svg class="ic"><use href="#i-plus"/></svg>Add a book</button>
+            <button type="button" class="nav"><svg class="ic"><use href="#i-users"/></svg>Group</button>
+            <span class="sep"></span>
+            <span class="avatar">JR</span>
+          </span>
+        </header>
+        <div class="desk">
+          <aside class="filters">
+            <div class="search"><svg class="ic"><use href="#i-search"/></svg>Search</div>
+            <div class="fgroup">
+              <h3>Show</h3>
+              <span class="fopt on">All books<span class="n">93</span></span>
+              <span class="fopt">I own<span class="n">38</span></span>
+              <span class="fopt">I want<span class="n">9</span></span>
+              <span class="fopt">In progress<span class="n">3</span></span>
+              <span class="fopt">Finished<span class="n">12</span></span>
+              <span class="fopt">I don't own<span class="n">55</span></span>
+            </div>
+            <div class="fgroup">
+              <h3>Product line</h3>
+              <span class="fopt on dbl"><span class="sw"></span>Dot by Letter<span class="n">22</span></span>
+              <span class="fopt mini"><span class="sw"></span>Dot by Letter Mini<span class="n">24</span></span>
+              <span class="fopt trace"><span class="sw"></span>Trace by Line<span class="n">12</span></span>
+              <span class="fopt reveal"><span class="sw"></span>Color to Reveal Scented<span class="n">5</span></span>
+              <span class="fopt premium"><span class="sw"></span>Dot by Letter Large Dot<span class="n">5</span></span>
+              <span class="fopt subtle">11 more lines</span>
+            </div>
+          </aside>
+          <section class="listing">
+            <div class="listing-h">
+              <div><h1>Dot by Letter</h1><div class="subtle">22 books</div></div>
+              <span class="select" style="flex:none;width:170px"><span>Sort <b>A to Z</b></span><svg class="ic sm"><use href="#i-down"/></svg></span>
+            </div>
+            <div class="table">
+              <div class="trow head"><span></span><span>Book</span><span>Status</span><span>Own</span></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Americana</strong><small>Lifelines · $12.99</small></span><span class="st"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span><span class="score">Rated <b>5</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Botanicals</strong><small>Lifelines · $12.99</small></span><span class="st"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span><span class="score">Rated <b>4</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow sel"><span class="cover dbl"></span><span class="txt"><strong>Cabin Getaway</strong><small>Target exclusive</small></span><span class="st"><span class="pill progress"><svg class="ic sm"><use href="#i-half"/></svg>15 of 20</span><span class="score">Rated <b>4</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Corner Cafe</strong><small>Target exclusive</small></span><span class="st"><span class="pill progress"><svg class="ic sm"><use href="#i-half"/></svg>9 of 20</span><span class="score">Rated <b>5</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Cozy Companions</strong><small>Target exclusive</small></span><span class="st"><span class="pill owned"><svg class="ic sm"><use href="#i-check"/></svg>Not started</span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Cozy Cottage</strong><small>Lifelines · $12.99</small></span><span class="st"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span><span class="score">Rated <b>3</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Festive Fun</strong><small>Turner Toys · $14.99</small></span><span class="st"><span class="pill quiet"><svg class="ic sm"><use href="#i-clock"/></svg>Coming soon</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Holiday Helpers</strong><small>No store listed</small></span><span class="st"><span class="pill want"><svg class="ic sm"><use href="#i-heart"/></svg>Want it</span></span><button type="button" class="own"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+              <div class="trow"><span class="cover dbl"></span><span class="txt"><strong>Landscapes</strong><small>No store listed</small></span><span class="st"><span class="pill done"><svg class="ic sm"><use href="#i-done"/></svg>Finished</span><span class="score">Rated <b>4</b></span></span><button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>Own</button></div>
+            </div>
+          </section>
+          <aside class="detail" data-book>
+            <div class="book-head">
+              <span class="cover lg dbl"></span>
+              <h1>Cabin Getaway</h1>
+              <span class="meta">Dot by Letter · 20 pages</span>
+              <span class="tags"><span class="pill excl"><svg class="ic sm"><use href="#i-tag"/></svg>Target exclusive</span></span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <button type="button" class="own on"><span class="box"><svg class="ic"><use href="#i-check"/></svg></span>I own this</button>
+              <span class="subtle">Started September 28</span>
+            </div>
+            <div class="seg"><button type="button">Not started</button><button type="button" class="on">In progress</button><button type="button">Finished</button></div>
+            <div class="block">
+              <div class="line-h"><h2>Pages</h2><span class="subtle"><b data-count>15</b> of 20 done</span></div>
+              <div class="pages" data-pages>
+                <button type="button" class="page done">1</button><button type="button" class="page done">2</button><button type="button" class="page done">3</button><button type="button" class="page done">4</button><button type="button" class="page done">5</button><button type="button" class="page done">6</button><button type="button" class="page done">7</button><button type="button" class="page done">8</button><button type="button" class="page done">9</button><button type="button" class="page done">10</button>
+                <button type="button" class="page done">11</button><button type="button" class="page done">12</button><button type="button" class="page done">13</button><button type="button" class="page done">14</button><button type="button" class="page done">15</button><button type="button" class="page">16</button><button type="button" class="page">17</button><button type="button" class="page">18</button><button type="button" class="page">19</button><button type="button" class="page">20</button>
+              </div>
+            </div>
+            <div class="rate">
+              <div class="line-h"><h2>Overall</h2></div>
+              <div class="seg"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button" class="on">4</button><button type="button">5</button></div>
+            </div>
+            <div class="rate">
+              <div class="line-h"><h2>Designs</h2><small class="subtle">Optional</small></div>
+              <div class="seg"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button" class="on">5</button></div>
+            </div>
+            <div class="rate">
+              <div class="line-h"><h2>Colors</h2><small class="subtle">Not rated yet</small></div>
+              <div class="seg"><button type="button">0</button><button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">5</button></div>
+            </div>
+            <div class="block">
+              <h2>Your notes</h2>
+              <div class="note">Using the fine tips for the snow on the roof. Saving the lake page for last.</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+</div>
+
+<script>
+document.querySelectorAll('[data-pages]').forEach(grid => {
+  const count = grid.closest('[data-book]')?.querySelector('[data-count]');
+  grid.addEventListener('click', event => {
+    const page = event.target.closest('.page');
+    if (!page) return;
+    page.classList.toggle('done');
+    if (count) count.textContent = grid.querySelectorAll('.page.done').length;
+  });
+});
+document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', event => {
+  const choice = event.target.closest('button');
+  if (!choice) return;
+  const wasOn = choice.classList.contains('on');
+  seg.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  if (!wasOn || !seg.closest('.rate')) choice.classList.add('on');
+}));
+document.querySelectorAll('.own').forEach(own => own.addEventListener('click', () => own.classList.toggle('on')));
+document.querySelectorAll('.chips').forEach(chips => chips.addEventListener('click', event => {
+  const chip = event.target.closest('.chip');
+  if (!chip) return;
+  chips.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === chip));
+}));
+</script>
+</body>
+</html>
