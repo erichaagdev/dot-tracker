@@ -49,8 +49,9 @@ src/main/java/dev/erichaag/dottracker/
   member/                         Member, its repository, service and controller
   invite/                         Invite, its repository, service and controller
   book/                           ProductLine, Book, Listing, Availability, their repositories, BookService,
-                                  BookRestController, ProductLineRestController
-  collection/                     CollectionEntry, Progress, Wanted, service, controller
+                                  BookDeleting, BookRestController, ProductLineRestController
+  collection/                     CollectionEntry, Progress, Wanted, CollectionEntryRepository, CollectionService,
+                                  CollectionRestController
 src/main/resources/
   application.yaml, application-demo.yaml
   db/migration/                   V1__schema.sql, V2__catalog.sql
@@ -144,14 +145,14 @@ create table book_listing (
 create table collection_entry (
   id uuid primary key default uuidv7(),
   member_id uuid not null references member (id) on delete cascade,
-  book_id uuid not null references book (id) on delete cascade,
+  book_id uuid not null references book (id),
   owned boolean not null default false,
   wanted text check (wanted in ('YES', 'MAYBE', 'NO')),
   progress text not null default 'NOT_STARTED' check (progress in ('NOT_STARTED', 'IN_PROGRESS', 'FINISHED')),
   pages_done integer[] not null default '{}',
-  rating smallint check (rating between 0 and 5),
-  design_rating smallint check (design_rating between 0 and 5),
-  color_rating smallint check (color_rating between 0 and 5),
+  rating integer check (rating between 0 and 5),
+  design_rating integer check (design_rating between 0 and 5),
+  color_rating integer check (color_rating between 0 and 5),
   notes text,
   started_on date,
   finished_on date,
@@ -167,18 +168,22 @@ A listing is an `@Embeddable` record `Listing(String retailer, @Nullable Integer
 
 `Book` holds its product line as a plain `productLineId`, the way `Invite` holds member ids, and the frontend matches it to the product lines it loads. `Book` keeps its name trimmed and never blank, a page count above 0, and each other name trimmed and only once, ignoring case, leaving out blanks and the book's own name. `Listing` keeps its retailer trimmed and never blank and its price never negative. `ProductLine` keeps its name trimmed and never blank and a default page count above 0. A new book gets its line's `default_page_count` unless the admin gives it its own, and changing a line's default leaves its books' counts as they are.
 
-`also_known_as` and `pages_done` map to `List<String>` and `List<Integer>` fields, which Hibernate 7.4 stores as Postgres arrays with no annotation, since it maps a `List` of a basic type to the dialect's array type. `rating` is the overall score for how much someone liked the book, and it's the one lists and the shelf show. `design_rating` and `color_rating` are optional extras on the book screen. A null rating means not rated yet, and 0 is a real score.
+`also_known_as` and `pages_done` map to `List<String>` and `List<Integer>` fields, which Hibernate 7.4 stores as Postgres arrays with no annotation, since it maps a `List` of a basic type to the dialect's array type. `rating` is the overall score for how much someone liked the book, and it's the one lists and the shelf show. `design_rating` and `color_rating` are optional extras on the book screen. A null rating means not rated yet, and 0 is a real score. The ratings are `integer` columns mapped to `Integer` fields, since `ddl-auto=validate` refuses an `Integer` field over a `smallint` column.
+
+`CollectionEntry` holds `member_id` and `book_id` as plain `memberId` and `bookId` fields, the way `Book` holds its product line. A collection entry's `book_id` has no `on delete cascade`, so the database refuses to delete a book that someone tracks, and `member_id` cascades, so a member's entries go with them.
 
 ## Collection rules
 
-`CollectionEntry` holds these rules, and `CollectionService` creates an entry the first time a person changes anything about a book.
+`CollectionEntry` holds these rules in its own methods, which take the book's page count where a rule needs it and the injected `Clock` for `updated_at` and for today's date, `LocalDate.now(clock)`, in the group's time zone. `CollectionService` creates an entry the first time a person changes anything about a book, after checking the book exists, and a first change that's refused leaves no entry behind.
 
 - Marking a book in progress or finished also marks it owned. Unmarking owned leaves progress alone, so a finished book someone gave away keeps its history.
 - Marking a page done on a book that hasn't been started moves it to in progress and sets `started_on`.
 - Marking the last remaining page done moves it to finished and sets `finished_on`. Unmarking a page on a finished book moves it back to in progress and clears `finished_on`.
-- Setting progress by hand never changes pages, so someone can finish a book without ticking every page.
-- A page number must be between 1 and the book's page count. If an admin later lowers a page count, pages beyond it stay stored but are left out of responses and counts.
+- Setting progress by hand never changes pages, so someone can finish a book without ticking every page. Moving to in progress sets `started_on` unless it's already set and clears `finished_on`, moving to finished sets `finished_on` and leaves `started_on` as it is, and moving back to not started clears both.
+- Pages are kept sorted and once each. A page number must be between 1 and the book's page count, for marking and unmarking alike. If an admin later lowers a page count, pages beyond it stay stored but are left out of responses and counts, so the last remaining page is the last one within the new count.
 - Ratings are 0 to 5 or null. `wanted` is independent of `owned`, and the wishlist is every book marked wanted yes or maybe that isn't owned.
+- Notes are trimmed, and blank notes are stored as none.
+- A change that leaves the entry as it was, such as marking a page that's already done, changes nothing, not even `updated_at`, so Hibernate writes nothing and `@Version` stays put.
 
 ## REST API
 
@@ -192,7 +197,7 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 | `GET /api/books/{id}` | member | One book |
 | `POST /api/books` | admin | Adds a book and answers 201 |
 | `PUT /api/books/{id}` | admin | Edits a book |
-| `DELETE /api/books/{id}` | admin | Removes a book added by mistake with its listings, and answers 204 even when it's already gone |
+| `DELETE /api/books/{id}` | admin | Removes a book added by mistake with its listings, and answers 204 even when it's already gone. A book anyone has a collection entry for is refused with a 400 that says to mark it retired instead |
 | `GET /api/product-lines` | member | Product lines in sort order |
 | `POST /api/product-lines`, `PUT /api/product-lines/{id}` | admin | Adds a product line and answers 201, or edits one |
 | `GET /api/collection` | member | Every entry of the signed-in member |
@@ -201,7 +206,7 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 | `PUT /api/collection/{bookId}/progress` | member | Body `{"progress": "IN_PROGRESS"}` |
 | `PUT /api/collection/{bookId}/pages/{page}` | member | Marks a page done |
 | `DELETE /api/collection/{bookId}/pages/{page}` | member | Marks a page not done |
-| `PUT /api/collection/{bookId}/ratings` | member | Body `{"overall": 4, "design": 5, "color": null}` |
+| `PUT /api/collection/{bookId}/ratings` | member | Body `{"overall": 4, "design": 5, "color": null}`, which sets all three, so a null or missing rating is cleared |
 | `PUT /api/collection/{bookId}/notes` | member | Body `{"notes": "..."}` |
 | `GET /api/members` | admin | Everyone in the group |
 | `PUT /api/members/{id}/role` | admin | Body `{"role": "ADMIN"}` or `"MEMBER"`. Refused for the group's last admin |
@@ -210,9 +215,13 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 | `GET /api/invites/pending` | anyone | `{"expiresAt": ...}` for the open invite held in the session, or a 404 saying the invite has expired or was already used |
 | `GET /join/{code}` | anyone | Starts sign-in with an invite, outside `/api` |
 
-Every collection write answers with the updated entry, and every write is idempotent, so a retried request does no harm. Admin routes carry `@PreAuthorize("hasRole('ADMIN')")` with `@EnableMethodSecurity`.
+Every collection write answers with the updated entry, and every write is idempotent, so a retried request does no harm. Marking a page that's already done, or unmarking one that isn't, changes nothing and still answers 200. The member is always the signed-in one, from `CurrentMember`. Admin routes carry `@PreAuthorize("hasRole('ADMIN')")` with `@EnableMethodSecurity`.
 
 A book comes back as `id`, `productLineId`, `name`, `alsoKnownAs`, `availability`, `pageCount`, `listings` and `exclusive`, where each listing has `retailer`, `priceCents`, `url` and `exclusive`, and the book's `exclusive` is true when any listing is. The frontend's search matches `alsoKnownAs` as well as the name. `POST` and `PUT /api/books` take the same fields except `id` and `exclusive`, and a missing `pageCount` means the product line's default. A product line comes back as `id`, `name`, `defaultPageCount` and `sortOrder`, and its `POST` and `PUT` take all of them but `id`. `BookService` refuses a second book with the same name in a product line, or a second product line with the same name, ignoring case, with a plain sentence before the unique indexes would. `GET /api/books` loads every book with its listings in one query through an `@EntityGraph` on the repository method, since an eager element collection otherwise costs a query per book.
+
+A collection entry comes back as `bookId`, `owned`, `wanted`, `progress`, `pagesDone`, `ratings`, `notes`, `startedOn`, `finishedOn` and `updatedAt`, where `ratings` has `overall`, `design` and `color`, the same shape the ratings route takes. `wanted`, each rating, `notes` and the dates are null when unset, and `pagesDone` is in order and leaves out pages beyond the book's page count. The frontend matches an entry to its book by `bookId`. A book with no entry is one the member hasn't touched. `CollectionService` answers each change with the entry and its book's page count, and `GET /api/collection` loads the catalog once for the page counts rather than a book per entry.
+
+The collection domain depends on `BookService` for page counts, so the book domain never calls the collection domain back. Instead, `BookService.delete` publishes a `BookDeleting` event through Spring's `ApplicationEventPublisher` before it deletes, and an `@EventListener` in `CollectionService` throws an `IllegalArgumentException` when anyone has an entry for that book. The listener runs synchronously inside the delete's transaction, so its refusal rolls the delete back and `RestExceptionHandler` answers 400. The foreign key without a cascade backs the refusal up in the database.
 
 ## Sign-in and membership
 
@@ -273,13 +282,14 @@ The frontend is one Svelte 5 app in plain JavaScript, built by Vite, and served 
 
 Docker Desktop has to be running for local runs and for tests. `compose.yaml` defines a `postgres:18` service with a named volume, and `spring-boot-docker-compose` starts it on `gain bootRun`, so the app runs on port 8080 against a database that persists between runs. Running it this way needs a Google OAuth client with `http://localhost:8080/login/oauth2/code/google` as a redirect URI, and a git-ignored `.env` at the root with `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and your email as `DOT_TRACKER_ADMIN_EMAILS`, one `NAME=value` per line without quotes.
 
-`gain bootTestRun` starts `TestDotTrackerApplication`, which runs the app through `SpringApplication.from(...).with(...)` with a throwaway Testcontainers Postgres and the `demo` profile on port 8889. The demo profile, in `application-demo.yaml` and the `@Profile("demo")` beans, swaps Google sign-in for Spring Security's form login and its default page at `/login`, with two members, `ana@example.com` as an admin and `bea@example.com` as a member, both with the password `demo`. Its `DemoSeeder` saves the two members through the repository when there are no members yet, and gives each of them a believable collection with a book in progress, ratings and a wishlist, so every screen has something on it.
+`gain bootTestRun` starts `TestDotTrackerApplication`, which runs the app through `SpringApplication.from(...).with(...)` with a throwaway Testcontainers Postgres and the `demo` profile on port 8889. The demo profile, in `application-demo.yaml` and the `@Profile("demo")` beans, swaps Google sign-in for Spring Security's form login and its default page at `/login`, with two members, `ana@example.com` as an admin and `bea@example.com` as a member, both with the password `demo`. Its `DemoSeeder` saves the two members through the repository when there are no members yet, and gives each of them a collection when there are no collection entries yet, so every screen has something on it. Ana's collection is the one the mockups show. Cabin Getaway is in progress at pages 1 to 15 with a note, started 27 days before the run, Corner Cafe is in progress at 9 of 20 pages, the Mini Cottage Garden is in progress, eight finished books carry ratings with Gingerbread Delight and Home For The Holidays finished most recently, Cozy Companions is owned but not started, and five books are on her wishlist. Bea's is smaller and mostly different books. The seeder builds every entry through `CollectionEntry`'s own methods with clocks set back a number of days, so the seeded dates follow the same rules as real ones and stay recent whenever the demo runs.
 
 `npm run dev` in `frontend` serves the app with hot reload on port 5173 and proxies `/api`, `/join`, `/login`, `/oauth2` and `/logout` to port 8889 by default, or to whatever `DOT_TRACKER_API_URL` names. Gradle's toolchain provides Java 25, and a `mise.toml` at the root pins Node 24 for mise.
 
 ## Testing
 
 - Entity rules, such as the collection rules above, get plain unit tests.
+- `CollectionServiceTest` imports `BookService` beside `CollectionService`, so it checks that pages round-trip through the `integer[]` column in order, that a page already done writes nothing, that a lowered page count leaves later pages stored but out of the count, and that deleting a book someone tracks is refused.
 - Repositories and services use `@DataJpaTest` with `@AutoConfigureTestDatabase(replace = NONE)` and `@Import(PostgresTestConfiguration.class)`, whose `@ServiceConnection` bean starts one `postgres:18` container that every test reuses. The real Flyway migrations run, so a test sees the seeded catalog. The service under test is added with `@Import`.
 - Every controller gets a `@WebMvcTest` with MockMvc, the service as a `@MockitoBean` and the real `SecurityConfiguration` imported. Those tests pin JSON field names, status codes, the 401 for a missing session, the 403 for a member on an admin route and the CSRF requirement on writes, using `oidcLogin()` and `csrf()` from `spring-security-test`. `SecurityConfigurationTest` covers the rules that belong to no controller, such as signing out, the not-invited redirect and the demo form login, and sends the CSRF token the way the frontend does, from the `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header, since `csrf()` swaps the context's token repository for one that sets no cookie.
 - `MemberOidcUserServiceTest` covers each sign-in path, being an existing member by Google subject, an existing member by email whose Google account gets linked, accepting a valid invite, refusing an expired or used one, bootstrapping an admin, refusing an unverified email and refusing a stranger.

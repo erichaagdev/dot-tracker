@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +25,15 @@ public class BookService {
 
   private final ProductLineRepository productLines;
 
+  private final ApplicationEventPublisher events;
+
   private final Clock clock;
 
-  public BookService(BookRepository books, ProductLineRepository productLines, Clock clock) {
+  public BookService(BookRepository books, ProductLineRepository productLines, ApplicationEventPublisher events,
+    Clock clock) {
     this.books = books;
     this.productLines = productLines;
+    this.events = events;
     this.clock = clock;
   }
 
@@ -73,9 +78,13 @@ public class BookService {
     return book;
   }
 
-  /** Removes a book. One that's already gone is left gone, so a retried request does no harm. */
+  /**
+   * Removes a book unless a listener of {@link BookDeleting} refuses, as the collection domain does for a book anyone
+   * tracks. One that's already gone is left gone, so a retried request does no harm.
+   */
   @Transactional
   public void delete(UUID id) {
+    events.publishEvent(new BookDeleting(id));
     books.deleteById(id);
     logger.info("Deleted the book {}", id);
   }

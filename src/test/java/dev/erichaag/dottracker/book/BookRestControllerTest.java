@@ -3,6 +3,7 @@ package dev.erichaag.dottracker.book;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -159,6 +160,21 @@ class BookRestControllerTest {
     mvc.perform(delete("/api/books/{id}", BOOK).with(admin()).with(csrf()))
       .andExpect(status().isNoContent());
     verify(service).delete(BOOK);
+  }
+
+  @Test
+  void deletingABookSomeoneTracksAnswers400AskingForItToBeRetired() throws Exception {
+    // Given
+    doThrow(new IllegalArgumentException(
+      "Someone in the group is already tracking this book, so it can't be deleted. Mark it as retired instead."))
+      .when(service).delete(BOOK);
+
+    // When / Then
+    mvc.perform(delete("/api/books/{id}", BOOK).with(admin()).with(csrf()))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+      .andExpect(jsonPath("$.detail").value(
+        "Someone in the group is already tracking this book, so it can't be deleted. Mark it as retired instead."));
   }
 
   @Test
