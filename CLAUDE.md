@@ -48,7 +48,7 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 
 ## Errors and logging
 
-- Don't define custom exception types. Services throw `IllegalArgumentException` for a rejected argument and `NoSuchElementException` for a missing item, each with a plain sentence a person can read. `RestExceptionHandler` turns them into a 400 or 404 `ProblemDetail` whose `detail` the frontend shows as is, and turns an `ObjectOptimisticLockingFailureException` into a 409 that asks the person to refresh. Controllers never catch exceptions.
+- Don't define custom exception types. Services throw `IllegalArgumentException` for a rejected argument and `NoSuchElementException` for a missing item, each with a plain sentence a person can read. `RestExceptionHandler` turns them into a 400 or 404 `ProblemDetail` whose `detail` the frontend shows as is. It also turns Spring Security's `AccessDeniedException` into a 403 saying only an admin can do that, and an `ObjectOptimisticLockingFailureException` into a 409 that asks the person to refresh. Controllers never catch exceptions.
 - Log through SLF4J with `private static final Logger logger = LoggerFactory.getLogger(Xxx.class)`, using placeholders rather than string concatenation.
 - Comment only the reason for a decision that isn't obvious.
 

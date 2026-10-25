@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.erichaag.dottracker.security.SecurityConfiguration;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -13,12 +14,13 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @WebMvcTest(controllers = RestExceptionHandlerTest.ThrowingController.class)
-@Import(RestExceptionHandlerTest.ThrowingController.class)
+@Import({SecurityConfiguration.class, RestExceptionHandlerTest.ThrowingController.class})
 class RestExceptionHandlerTest {
 
   @Autowired
@@ -32,6 +34,16 @@ class RestExceptionHandlerTest {
       .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
       .andExpect(jsonPath("$.status").value(400))
       .andExpect(jsonPath("$.detail").value("A rating must be between 0 and 5."));
+  }
+
+  @Test
+  void aRefusedPermissionAnswers403SayingOnlyAnAdminCanDoThat() throws Exception {
+    // When / Then
+    mvc.perform(get("/test/denied"))
+      .andExpect(status().isForbidden())
+      .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+      .andExpect(jsonPath("$.status").value(403))
+      .andExpect(jsonPath("$.detail").value("Only an admin can do that."));
   }
 
   @Test
@@ -61,6 +73,11 @@ class RestExceptionHandlerTest {
     @GetMapping("/test/rejected")
     String rejected() {
       throw new IllegalArgumentException("A rating must be between 0 and 5.");
+    }
+
+    @GetMapping("/test/denied")
+    String denied() {
+      throw new AccessDeniedException("Access Denied");
     }
 
     @GetMapping("/test/missing")

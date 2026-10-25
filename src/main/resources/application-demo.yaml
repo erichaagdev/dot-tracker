@@ -1,0 +1,7 @@
+server:
+  port: 8889
+  servlet:
+    session:
+      cookie:
+        # The demo runs on plain http://localhost, where some browsers won't keep a Secure cookie
+        secure: false

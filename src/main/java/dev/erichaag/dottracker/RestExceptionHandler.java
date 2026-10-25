@@ -2,19 +2,21 @@ package dev.erichaag.dottracker;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.util.NoSuchElementException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Answers a rejected argument with 400, a missing item with 404 and a save over a newer copy with 409, as a
- * {@link ProblemDetail} whose {@code detail} the frontend shows as is, so a service's message should read as a plain
- * sentence. Spring's own errors get their problem details from {@code spring.mvc.problemdetails.enabled}, whose
- * handler runs first.
+ * Answers a rejected argument with 400, a member on an admin route with 403, a missing item with 404 and a save over a
+ * newer copy with 409, as a {@link ProblemDetail} whose {@code detail} the frontend shows as is, so a service's message
+ * should read as a plain sentence. Spring's own errors get their problem details from
+ * {@code spring.mvc.problemdetails.enabled}, whose handler runs first.
  */
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -22,6 +24,12 @@ public class RestExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ProblemDetail badRequest(IllegalArgumentException e) {
     return ProblemDetail.forStatusAndDetail(BAD_REQUEST, e.getMessage());
+  }
+
+  // Nobody signed out lands here, since every @PreAuthorize route needs a session, and the filters answer 401 first
+  @ExceptionHandler(AccessDeniedException.class)
+  public ProblemDetail forbidden() {
+    return ProblemDetail.forStatusAndDetail(FORBIDDEN, "Only an admin can do that.");
   }
 
   @ExceptionHandler(NoSuchElementException.class)

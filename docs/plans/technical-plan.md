@@ -43,10 +43,11 @@ inventory/                        The original spreadsheet tabs, plus catalog.cs
 docs/plans/                       This plan and the overview
 docs/mockups/index.html           Screen mockups
 src/main/java/dev/erichaag/dottracker/
-  DotTrackerApplication.java
+  DotTrackerApplication.java, DotTrackerProperties.java, DemoSeeder.java
   ClockConfiguration.java, RestExceptionHandler.java, SpaForwardingController.java
-  security/                       SecurityConfiguration, MemberOidcUserService, CurrentMember
-  member/                         Member, Invite, their repositories, services and controllers
+  security/                       SecurityConfiguration, MemberOidcUserService, MemberOidcUser, CurrentMember, JoinController
+  member/                         Member, its repository, service and controller
+  invite/                         Invite, its repository, service and controller
   book/                           ProductLine, Book, Listing, Availability, service, controller
   collection/                     CollectionEntry, Progress, Wanted, service, controller
 src/main/resources/
@@ -178,11 +179,11 @@ A listing is an `@Embeddable` record `Listing(String retailer, @Nullable Integer
 
 ## REST API
 
-Every route lives under `/api`, uses plural resources and kebab-case segments, and answers JSON. Ids in paths and bodies are UUID strings. Instants are ISO 8601 strings and dates are ISO dates. A request without a session gets a 401, never a redirect, so the frontend can show the sign-in screen.
+Every route lives under `/api`, uses plural resources and kebab-case segments, and answers JSON. Ids in paths and bodies are UUID strings. Instants are ISO 8601 strings and dates are ISO dates. A request without a session gets a 401, never a redirect, so the frontend can show the sign-in screen. The one route open without a session is `GET /api/invites/pending`, which the welcome screen reads before anyone signs in. A member on an admin route gets a 403 `ProblemDetail` whose `detail` is "Only an admin can do that.", from `RestExceptionHandler` handling Spring Security's `AccessDeniedException`.
 
 | Method and path | Who | What it does |
 |---|---|---|
-| `GET /api/me` | member | The signed-in member and their role |
+| `GET /api/me` | member | The signed-in member, with their id, email, display name, role and when they joined |
 | `POST /api/logout` | member | Ends the session |
 | `GET /api/books` | member | The whole catalog with listings. About a hundred rows, so the frontend filters and searches locally |
 | `GET /api/books/{id}` | member | One book |
@@ -200,9 +201,10 @@ Every route lives under `/api`, uses plural resources and kebab-case segments, a
 | `PUT /api/collection/{bookId}/ratings` | member | Body `{"overall": 4, "design": 5, "color": null}` |
 | `PUT /api/collection/{bookId}/notes` | member | Body `{"notes": "..."}` |
 | `GET /api/members` | admin | Everyone in the group |
-| `PUT /api/members/{id}/role` | admin | Makes someone an admin or a member |
-| `GET /api/invites`, `POST /api/invites` | admin | Lists open invites, or creates one and answers with its link |
-| `DELETE /api/invites/{id}` | admin | Revokes an invite |
+| `PUT /api/members/{id}/role` | admin | Body `{"role": "ADMIN"}` or `"MEMBER"`. Refused for the group's last admin |
+| `GET /api/invites`, `POST /api/invites` | admin | Lists open invites newest first, or creates one and answers 201. Each invite has its id, its full `/join/<code>` link built from the address the admin used, and when it was made and expires |
+| `DELETE /api/invites/{id}` | admin | Revokes an invite, and answers 204 even when it's already gone |
+| `GET /api/invites/pending` | anyone | `{"expiresAt": ...}` for the open invite held in the session, or a 404 saying the invite has expired or was already used |
 | `GET /join/{code}` | anyone | Starts sign-in with an invite, outside `/api` |
 
 Every collection write answers with the updated entry, and every write is idempotent, so a retried request does no harm. Admin routes carry `@PreAuthorize("hasRole('ADMIN')")` with `@EnableMethodSecurity`.
@@ -211,14 +213,20 @@ Every collection write answers with the updated entry, and every write is idempo
 
 People sign in with Google through `oauth2Login`, and nobody gets in without an invitation. A closed group of friends doesn't need passwords, password resets or email sending. Not everyone in the group may have a Google account, so "Later work" covers Facebook as a second way in. The consent screen asks only for `openid`, `email` and `profile`, which lets the Google client be published to production without app verification.
 
-1. An admin creates an invite in the app and texts its link, `https://<host>/join/<code>`, to a friend. A code is 16 random URL-safe bytes, works once and expires after 14 days.
-2. `GET /join/{code}` checks the code, keeps it in the session and redirects to `/oauth2/authorization/google`. An expired or used code redirects to `/?signin=invite-expired` instead.
-3. `MemberOidcUserService` extends `OidcUserService`. After Google answers, it finds the member by Google subject, then by email, and otherwise accepts the invite held in the session and creates the member. An email listed in `dot-tracker.admin-emails` becomes an admin on first sign-in without an invite, which is how the first account exists.
-4. Anyone else is refused with an `OAuth2AuthenticationException`, and the failure handler redirects to `/?signin=not-invited`, where the sign-in screen asks them for an invite link.
+1. An admin creates an invite in the app and texts its link, `https://<host>/join/<code>`, to a friend. A code is 16 random bytes from `SecureRandom`, encoded as URL-safe Base64, works once and expires 14 days after it was made by the injected `Clock`.
+2. `GET /join/{code}`, in `security/JoinController`, checks the code, keeps it in the session and redirects to the frontend's `/welcome` screen. An expired, used or unknown code redirects to `/?signin=invite-expired` instead. The welcome screen, from the mockups' Joining screen, reads the invite's expiry from `GET /api/invites/pending`, which `JoinController` also serves, and its "Continue with Google" button links to `/oauth2/authorization/google`.
+3. `MemberOidcUserService` extends `OidcUserService`, and `oauth2Login` finds it as the context's OIDC user service bean. After Google answers, it hands the account to `MemberService.signInWithGoogle` in one transaction. That finds the member by Google subject, then by email, which links the Google account to them, and otherwise accepts the invite held in the session and creates the member, with the display name from Google's `name` claim, or the email when it's missing. An email listed in `dot-tracker.admin-emails` becomes an admin on first sign-in without an invite, which is how the first account exists. Matching by email and the admin bootstrap both need Google's `email_verified` claim, and a member already linked to one Google account is never linked to another.
+4. Anyone else is refused with an `OAuth2AuthenticationException`, and the failure URL is `/?signin=not-invited`, where the sign-in screen asks them for an invite link. Every other failed Google sign-in lands there too.
 
-`CurrentMember` resolves the signed-in member's id from the security context, so controllers work the same under Google sign-in and under the demo profile's form login. Sessions live in Postgres through Spring Session JDBC, last 90 days and survive restarts and deploys. The session cookie is `Secure`, `HttpOnly` and `SameSite=Lax`, with `server.servlet.session.cookie.max-age` set so a phone keeps it after the browser closes.
+`Invite` keeps `created_by` and `accepted_by` as plain member ids rather than entity references. `MemberService` refuses to make the group's last admin a member, with a plain sentence, and locks the admin rows while it checks, so two admins demoting each other at once can't leave the group without one. A session holds the role its member signed in with, so a change of role deletes that member's sessions through `FindByIndexNameSessionRepository.findByPrincipalName` with their id. A demoted admin loses admin rights at once, and a promoted member signs in again to get them.
 
-CSRF protection uses `http.csrf(csrf -> csrf.spa())`, which `CsrfConfigurer` has in Spring Security 7.1.2. It sets an `XSRF-TOKEN` cookie that `api.js` reads and sends back as `X-XSRF-TOKEN` on every write. Behind Cloud Run's front end, `server.forward-headers-strategy=framework` makes the OAuth redirect URI use `https`.
+The signed-in user is named after their member id under either sign-in. `MemberOidcUserService` answers with a `MemberOidcUser`, a `DefaultOidcUser` whose name is the member id and whose only authority is `ROLE_ADMIN` or `ROLE_MEMBER`. The demo profile's `UserDetailsService` finds a member by the email typed into the form and answers with a user named after their id. `CurrentMember` reads the id from the security context's authentication name, so controllers work the same under both. The request cache is off, since only `/api` calls need a session and none of them is a page to come back to, so signing in always lands on `/`.
+
+Sessions live in Postgres through Spring Session JDBC, last 90 days and survive restarts and deploys. The session cookie is `Secure`, `HttpOnly` and `SameSite=Lax`, with `server.servlet.session.cookie.max-age` set so a phone keeps it after the browser closes. The demo profile turns `Secure` off, since it runs on plain `http://localhost`, where some browsers won't keep a `Secure` cookie.
+
+Google's client id and secret come from the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables, which `application.yaml` names as placeholders in `spring.security.oauth2.client.registration.google`, and the admin emails from `DOT_TRACKER_ADMIN_EMAILS` the same way. Locally, `spring.config.import=optional:file:.env[.properties]` reads them from a git-ignored `.env` in the same `NAME=value` form. Spring Boot leaves a placeholder it can't resolve as written, so without them the Google registration still exists, with a client that can't sign anyone in, and tests, `ApplicationContextTest` and the demo profile all start without Google credentials.
+
+CSRF protection uses `http.csrf(csrf -> csrf.spa())`, which `CsrfConfigurer` has in Spring Security 7.1.2. It sets an `XSRF-TOKEN` cookie on every response that doesn't already carry one, which `api.js` reads and sends back as `X-XSRF-TOKEN` on every write. `POST /api/logout` ends the session and answers 204. Behind Cloud Run's front end, `server.forward-headers-strategy=framework` makes the OAuth redirect URI use `https`.
 
 ## Seeding the catalog from the spreadsheet
 
@@ -242,7 +250,7 @@ The spreadsheet is a public one found online, so its personal columns seed nothi
 
 The frontend is one Svelte 5 app in plain JavaScript, built by Vite, and served by Spring Boot from the same origin, so cookies and CSRF need no cross-origin setup.
 
-- Screens are Shelf, Browse, Book, Wishlist, Account, Book editor, Group and Sign in. The mockups show Shelf, Browse, Book, the book editor and the invite sign-in at phone width, and Browse with a book open at desktop width. Wishlist reuses Browse's rows, and Account and Group are short lists in the same style.
+- Screens are Shelf, Browse, Book, Wishlist, Account, Book editor, Group, Sign in and Welcome, which an invite link lands on at `/welcome`. The mockups show Shelf, Browse, Book, the book editor and the invite's welcome screen at phone width, and Browse with a book open at desktop width. Wishlist reuses Browse's rows, and Account and Group are short lists in the same style.
 - Below 900 px wide the app is one column with a bottom tab bar of Shelf, Browse, Wishlist and Account, and a book opens as its own screen. From 900 px a top bar replaces the tab bar and holds the admin links, and Browse puts the filters on the left, the list in the middle and the selected book's detail on the right, so a desktop user never leaves the list.
 - `src/lib/router.svelte.js` keeps routes in the path, such as `/books/<id>`, so a link to a book can be shared. `SpaForwardingController` forwards any `GET` without a file extension outside `/api`, `/oauth2`, `/login`, `/join` and `/actuator` to `index.html`.
 - `src/lib/api.js` adds the CSRF header to every write, shows a refused request's `ProblemDetail.detail` as the message and sends a 401 to the sign-in screen.
@@ -255,9 +263,9 @@ The frontend is one Svelte 5 app in plain JavaScript, built by Vite, and served 
 
 ## Local development
 
-Docker Desktop has to be running for local runs and for tests. `compose.yaml` defines a `postgres:18` service with a named volume, and `spring-boot-docker-compose` starts it on `gain bootRun`, so the app runs on port 8080 against a database that persists between runs. Running it this way needs a Google OAuth client with `http://localhost:8080/login/oauth2/code/google` as a redirect URI, read from a git-ignored `.env`, and your email in `dot-tracker.admin-emails`.
+Docker Desktop has to be running for local runs and for tests. `compose.yaml` defines a `postgres:18` service with a named volume, and `spring-boot-docker-compose` starts it on `gain bootRun`, so the app runs on port 8080 against a database that persists between runs. Running it this way needs a Google OAuth client with `http://localhost:8080/login/oauth2/code/google` as a redirect URI, and a git-ignored `.env` at the root with `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and your email as `DOT_TRACKER_ADMIN_EMAILS`, one `NAME=value` per line without quotes.
 
-`gain bootTestRun` starts `TestDotTrackerApplication`, which runs the app through `SpringApplication.from(...).with(...)` with a throwaway Testcontainers Postgres and the `demo` profile on port 8889. The demo profile swaps Google sign-in for a form login with two seeded members, `ana@example.com` as an admin and `bea@example.com` as a member, both with the password `demo`. Its `DemoSeeder` gives each of them a believable collection with a book in progress, ratings and a wishlist, so every screen has something on it.
+`gain bootTestRun` starts `TestDotTrackerApplication`, which runs the app through `SpringApplication.from(...).with(...)` with a throwaway Testcontainers Postgres and the `demo` profile on port 8889. The demo profile, in `application-demo.yaml` and the `@Profile("demo")` beans, swaps Google sign-in for Spring Security's form login and its default page at `/login`, with two members, `ana@example.com` as an admin and `bea@example.com` as a member, both with the password `demo`. Its `DemoSeeder` saves the two members through the repository when there are no members yet, and gives each of them a believable collection with a book in progress, ratings and a wishlist, so every screen has something on it.
 
 `npm run dev` in `frontend` serves the app with hot reload on port 5173 and proxies `/api`, `/join`, `/login`, `/oauth2` and `/logout` to port 8889 by default, or to whatever `DOT_TRACKER_API_URL` names. Gradle's toolchain provides Java 25, and a `mise.toml` at the root pins Node 24 for mise.
 
@@ -265,8 +273,9 @@ Docker Desktop has to be running for local runs and for tests. `compose.yaml` de
 
 - Entity rules, such as the collection rules above, get plain unit tests.
 - Repositories and services use `@DataJpaTest` with `@AutoConfigureTestDatabase(replace = NONE)` and `@Import(PostgresTestConfiguration.class)`, whose `@ServiceConnection` bean starts one `postgres:18` container that every test reuses. The real Flyway migrations run, so a test sees the seeded catalog. The service under test is added with `@Import`.
-- Every controller gets a `@WebMvcTest` with MockMvc, the service as a `@MockitoBean` and the real `SecurityConfiguration` imported. Those tests pin JSON field names, status codes, the 401 for a missing session, the 403 for a member on an admin route and the CSRF requirement on writes, using `oidcLogin()` and `csrf()` from `spring-security-test`.
-- `MemberOidcUserServiceTest` covers each sign-in path, being an existing member, accepting a valid invite, refusing an expired or used one, bootstrapping an admin and refusing a stranger.
+- Every controller gets a `@WebMvcTest` with MockMvc, the service as a `@MockitoBean` and the real `SecurityConfiguration` imported. Those tests pin JSON field names, status codes, the 401 for a missing session, the 403 for a member on an admin route and the CSRF requirement on writes, using `oidcLogin()` and `csrf()` from `spring-security-test`. `SecurityConfigurationTest` covers the rules that belong to no controller, such as signing out, the not-invited redirect and the demo form login, and sends the CSRF token the way the frontend does, from the `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header, since `csrf()` swaps the context's token repository for one that sets no cookie.
+- `MemberOidcUserServiceTest` covers each sign-in path, being an existing member by Google subject, an existing member by email whose Google account gets linked, accepting a valid invite, refusing an expired or used one, bootstrapping an admin, refusing an unverified email and refusing a stranger.
+- `MemberServiceTest` imports Spring Session's `JdbcHttpSessionConfiguration`, the configuration Spring Boot imports for the app, and checks that a change of role deletes that member's sessions in Postgres and leaves everyone else's.
 - `CatalogSeedTest` checks the seed as described above.
 - `ApplicationContextTest` starts the whole app once against the test container.
 
@@ -277,7 +286,7 @@ The app runs on Google Cloud, in one project in `us-central1`.
 - Cloud Run runs the container image that `gain bootBuildImage` builds, pulled from Artifact Registry. The task sets `imagePlatform = "linux/amd64"`, since Cloud Run runs amd64 and a Mac builds arm64 by default. The service gets 512 MB of memory, startup CPU boost and between 0 and 2 instances. Scaling to zero keeps it free, at the cost of a few seconds' wait on the first visit after a quiet spell, and a minimum of 1 instance removes that wait for roughly $10 more a month. Sessions live in Postgres, so any instance serves any request.
 - Cloud SQL for PostgreSQL 18 holds the data, on the smallest shared-core tier with automated daily backups. It's created with `--edition=ENTERPRISE --tier=db-f1-micro`, because new Postgres instances otherwise default to the much pricier Enterprise Plus edition.
 - The app reaches Cloud SQL through the Cloud SQL Java connector, which handles TLS and authorizes through the Cloud Run service account's `roles/cloudsql.client`, so the instance needs no authorized networks. The datasource URL is `jdbc:postgresql:///dottracker?cloudSqlInstance=<project>:us-central1:<instance>&socketFactory=com.google.cloud.sql.postgres.SocketFactory`.
-- Secret Manager holds the database password and the Google client secret. Cloud Run gets `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, the Google client id and secret and `DOT_TRACKER_ADMIN_EMAILS` as environment variables, with the secrets referenced from Secret Manager.
+- Secret Manager holds the database password and the Google client secret. Cloud Run gets `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `DOT_TRACKER_ADMIN_EMAILS` as environment variables, with the secrets referenced from Secret Manager.
 - The Google OAuth client lives in the same project. Until a domain is chosen, the app is reached at the `run.app` address Cloud Run gives the service, and the client's redirect URI uses that address. A custom domain later only changes the redirect URI.
 - Cloud Run's startup and liveness probes use `/actuator/health`, the only actuator endpoint exposed. `server.forward-headers-strategy=framework` makes redirects use `https` behind Cloud Run's front end.
 
@@ -293,7 +302,7 @@ The first version is built in seven phases, each finished, reviewed and passing 
 2. Sign-in and membership. Build `SecurityConfiguration`, `MemberOidcUserService`, `CurrentMember`, the member and invite domains with their controllers, `/join/{code}` and Spring Session, with their tests. Add the demo profile's form login and members, and `TestDotTrackerApplication`.
 3. The catalog. Curate `inventory/catalog.csv` by the rules above, write `V2__catalog.sql` and `CatalogSeedTest`, and build the book domain, with its entities, repositories, `BookService` and the controllers for books and product lines, with their tests.
 4. Collections. Build the collection domain, with `CollectionEntry` and the collection rules' unit tests, `CollectionService`, `CollectionRestController` and their tests. Add `DemoSeeder`'s collections for the demo members.
-5. The frontend foundation and the main screens. Add tokens and fonts from the mockups, the responsive frame with its tab bar and top bar, the router, `api.js`, the stores and the sign-in screen, then the Browse and Book screens with the page grid, ratings, notes and the desktop list-and-detail layout.
+5. The frontend foundation and the main screens. Add tokens and fonts from the mockups, the responsive frame with its tab bar and top bar, the router, `api.js`, the stores and the sign-in and welcome screens, then the Browse and Book screens with the page grid, ratings, notes and the desktop list-and-detail layout.
 6. The remaining screens. Build Shelf, Wishlist and Account, and the admin screens, which are the book editor and the Group screen with invites and roles.
 7. Deploy. Write `docs/deploy.md`, create the Google Cloud resources and the Google client, sign in as the first admin and walk through every screen on a phone and a desktop. Then she invites her friends.
 

@@ -1,6 +1,19 @@
 spring:
   application:
     name: dot-tracker
+  # Production sets GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and DOT_TRACKER_ADMIN_EMAILS as environment variables, and
+  # locally they come from a git-ignored .env. Without them the placeholders below stay as written, so tests and the
+  # demo profile start with a Google client that can't sign anyone in.
+  config:
+    import: optional:file:.env[.properties]
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid, email, profile
   jpa:
     open-in-view: false
     hibernate:
@@ -28,3 +41,6 @@ management:
     web:
       exposure:
         include: health
+
+dot-tracker:
+  admin-emails: ${DOT_TRACKER_ADMIN_EMAILS:}
