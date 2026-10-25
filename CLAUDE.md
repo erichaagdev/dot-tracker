@@ -81,4 +81,4 @@ Every version comes from the Spring Boot BOM except the few pinned in `gradle/li
 
 ## Git
 
-Commit, push or open a pull request only when asked.
+Commit, push or open a pull request only when asked. A push to `main` deploys to production through `.github/workflows/deploy.yml`.

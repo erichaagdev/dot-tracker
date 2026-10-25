@@ -12,6 +12,8 @@ The deploy creates these resources.
 - The Cloud SQL instance `dot-tracker`, with a database and a user both named `dottracker`
 - The secrets `db-password` and `google-client-secret`
 - A Google OAuth client named Dot Tracker
+- The service account `dot-tracker-deploy` and the workload identity pool `github` with its provider `dot-tracker`, which let GitHub Actions deploy
+- The GitHub repository `erichaagdev/dot-tracker`, with the secrets `GCP_PROJECT_ID` and `GCP_PROJECT_NUMBER`
 
 ## First deploy
 
@@ -65,11 +67,13 @@ These are the only other APIs the app and this setup use. Logging is already on 
 - `iam.googleapis.com` creates the service account.
 - `cloudresourcemanager.googleapis.com` looks up the project number and grants the service account its project role.
 - `billingbudgets.googleapis.com` sets the budget alert.
+- `sts.googleapis.com` trades a GitHub Actions run's token for a Google one.
+- `iamcredentials.googleapis.com` lets that run act as the deploy service account.
 
 ```sh
 gcloud services enable run.googleapis.com sqladmin.googleapis.com artifactregistry.googleapis.com \
   secretmanager.googleapis.com iam.googleapis.com cloudresourcemanager.googleapis.com \
-  billingbudgets.googleapis.com
+  billingbudgets.googleapis.com sts.googleapis.com iamcredentials.googleapis.com
 ```
 
 ### 4. Set a budget alert
@@ -251,9 +255,62 @@ read -rs GOOGLE_CLIENT_SECRET
 printf '%s' "$GOOGLE_CLIENT_SECRET" | gcloud secrets versions add google-client-secret --data-file=-
 ```
 
+### 12. Let GitHub deploy every push
+
+`.github/workflows/deploy.yml` runs on GitHub Actions for every push to `main`. It builds the app, runs every test, builds the image, pushes it and deploys it the way "Redeploying" does, so a failing test stops it before anything reaches Google Cloud. It signs in to Google Cloud through workload identity federation, which trades the short-lived token GitHub gives each run for a Google one, so no key is stored anywhere. This step needs the service from the first deploy, since a workflow run only changes the image of a service that already exists.
+
+The step can run in a new terminal another day, so it sets its variables again.
+
+```sh
+export CLOUDSDK_ACTIVE_CONFIG_NAME=dot-tracker
+PROJECT_ID=$(gcloud config get project)
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+REGION=us-central1
+REPOSITORY=erichaagdev/dot-tracker
+```
+
+GitHub deploys as its own service account, which can push images to the image repository, deploy new revisions of the service and run them as `dot-tracker-run`, and nothing more.
+
+```sh
+gcloud iam service-accounts create dot-tracker-deploy --display-name="Dot Tracker deploys from GitHub"
+DEPLOY_ACCOUNT=dot-tracker-deploy@$PROJECT_ID.iam.gserviceaccount.com
+gcloud artifacts repositories add-iam-policy-binding dot-tracker --location=$REGION \
+  --member=serviceAccount:$DEPLOY_ACCOUNT --role=roles/artifactregistry.writer
+gcloud run services add-iam-policy-binding dot-tracker --region=$REGION \
+  --member=serviceAccount:$DEPLOY_ACCOUNT --role=roles/run.developer
+gcloud iam service-accounts add-iam-policy-binding dot-tracker-run@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=serviceAccount:$DEPLOY_ACCOUNT --role=roles/iam.serviceAccountUser
+```
+
+Then create the pool and its GitHub provider, and let runs from the repository act as the deploy account. The provider's condition accepts a token only from a run on `main` of this repository, so no fork, pull request or other branch can deploy.
+
+```sh
+gcloud iam workload-identity-pools create github --location=global --display-name="GitHub"
+gcloud iam workload-identity-pools providers create-oidc dot-tracker --location=global \
+  --workload-identity-pool=github --display-name="Dot Tracker" \
+  --issuer-uri=https://token.actions.githubusercontent.com \
+  --attribute-mapping=google.subject=assertion.sub,attribute.repository=assertion.repository \
+  --attribute-condition="assertion.repository == '$REPOSITORY' && assertion.ref == 'refs/heads/main'"
+gcloud iam service-accounts add-iam-policy-binding $DEPLOY_ACCOUNT --role=roles/iam.workloadIdentityUser \
+  --member=principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPOSITORY
+```
+
+Last, create the GitHub repository with this folder as its source, give it the project's id and number as secrets and push. The repository starts private and can be made public later without changing anything here, since GitHub masks the secrets in the logs.
+
+```sh
+gh repo create $REPOSITORY --private --source=. --remote=origin
+gh secret set GCP_PROJECT_ID --repo=$REPOSITORY --body="$PROJECT_ID"
+gh secret set GCP_PROJECT_NUMBER --repo=$REPOSITORY --body="$PROJECT_NUMBER"
+git push -u origin main
+```
+
+The push starts the first run, which deploys the commit that's already running. Follow it on the repository's Actions tab or with `gh run watch`. New IAM bindings can take a few minutes to take effect, so if the first run fails at authentication or at the push, rerun it from the Actions tab or with `gh run rerun --failed`.
+
 ## Redeploying
 
-A new version is a build, a push and a deploy with the new image.
+Every push to `main` deploys through `.github/workflows/deploy.yml`, and `gh workflow run deploy.yml` or the Run workflow button on the Actions tab deploys `main` again without a new commit. A failed build or test stops the run before anything is pushed, and the running version keeps serving. Pushes that land while a run is going wait for it, and only the newest of them deploys next.
+
+To deploy from this machine instead, build, push and deploy by hand.
 
 ```sh
 export CLOUDSDK_ACTIVE_CONFIG_NAME=dot-tracker
@@ -290,7 +347,7 @@ The Cloud Console shows the same logs on the service's Logs tab under Cloud Run.
 
 ## Costs
 
-The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 140 MB for the app and its AOT cache, which comes to roughly 0.8 GB, a few cents a month past the free 0.5 GB. Scaling to zero means the first visit after a quiet spell waits a few seconds for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
+The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 140 MB for the app and its AOT cache, which comes to roughly 0.8 GB, a few cents a month past the free 0.5 GB. GitHub Actions is free for a public repository, and a private one's runs count against the Actions minutes that come with the GitHub plan each month. Scaling to zero means the first visit after a quiet spell waits a few seconds for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
 
 ```sh
 gcloud run services update dot-tracker --region=$REGION --min-instances=1
