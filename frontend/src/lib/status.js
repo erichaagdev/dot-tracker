@@ -52,8 +52,6 @@ export function theirOwnPill(entry) {
       return { kind: 'want', icon: Heart, text: 'Wants it' }
     case 'MAYBE':
       return { kind: 'want', icon: Heart, text: 'Maybe wants it' }
-    case 'NO':
-      return { kind: 'quiet', icon: CircleOff, text: "Doesn't want it" }
     default:
       return null
   }

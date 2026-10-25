@@ -40,12 +40,13 @@ export function loadBookEntries(bookId) {
 }
 
 /**
- * Whether someone has done anything with a book. An entry can be left with nothing in it, such as after unchecking
- * Own, and then it shows the same as no entry at all.
+ * Whether someone has anything to show for a book. An entry can be left with nothing in it, such as after unchecking
+ * Own, or only say they don't want the book, and then it shows the same as no entry at all.
  */
 export function isTracked(entry) {
   return entry.owned
-    || entry.wanted !== null
+    || entry.wanted === 'YES'
+    || entry.wanted === 'MAYBE'
     || entry.progress !== 'NOT_STARTED'
     || entry.pagesDone.length > 0
     || Object.values(entry.ratings).some((rating) => rating !== null)

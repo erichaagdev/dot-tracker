@@ -84,7 +84,7 @@ gcloud billing budgets create --billing-account=$BILLING_ACCOUNT --display-name=
 
 ### 5. Create the image repository
 
-The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage inside the free tier. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
+The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage to roughly 0.8 GB, as "Costs" explains. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
 
 ```sh
 gcloud artifacts repositories create dot-tracker --repository-format=docker --location=$REGION \
@@ -182,6 +182,8 @@ docker push $IMAGE:$TAG
 
 `./gradlew bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
 
+The build also records a JVM AOT cache that the image starts with, which roughly halves the app's startup time. The buildpack starts the app once as a training run, which stops as soon as the app's context is ready, and saves the classes it loaded already parsed and linked. No database is reachable during the build, so `build.gradle.kts` gives that run a datasource URL with no database behind it and turns off Flyway and Hibernate's schema checks for that run only. Spring Session still asks for the database's name once, so the build log shows a warning about a refused connection to `localhost:5432`, which is expected. The cache goes into one layer with the app and its libraries, about 140 MB compressed, and that layer changes with every build, so each push uploads about 140 MB.
+
 ### 10. Deploy
 
 The plain settings go in an env vars file, because the admin email list holds commas, which `--set-env-vars` would split on. The file goes in the git-ignored `build` folder and is only needed this once, since later deploys keep the service's settings. Replace the placeholder with the Google account emails that become admins on their first sign-in, separated by commas.
@@ -208,7 +210,7 @@ gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
   --liveness-probe=httpGet.path=/actuator/health,periodSeconds=30,timeoutSeconds=5,failureThreshold=3
 ```
 
-The service gets 1 GiB of memory because the buildpack's memory calculator sizes the JVM from the container's limit. Its fixed regions, which are 250 thread stacks, a 240 MiB code cache and the metaspace, need about 670 MiB before the heap gets anything, so the image refuses to start in 512 MiB. In a local run limited to 1 GiB, the app started in 8.5 seconds and, after a few thousand requests, the JVM had committed about 335 MiB and the container used about 510 MiB. That run was under amd64 emulation on an Apple silicon Mac, which makes startup slower than on Cloud Run.
+The service gets 1 GiB of memory because the buildpack's memory calculator sizes the JVM from the container's limit. Its fixed regions, which are 250 thread stacks, a 240 MiB code cache and the metaspace, need about 670 MiB before the heap gets anything, so the image refuses to start in 512 MiB. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB, the app started in about 2.6 seconds and the container used about 240 MiB once it was up, where the same build without the AOT cache took about 5.1 seconds and 270 MiB. After 5,000 requests to the pages and endpoints that need no sign-in, the JVM had committed about 240 MiB and the container used about 270 MiB.
 
 The startup probe gives a new instance two minutes to answer `/actuator/health`, and the liveness probe restarts an instance that stops answering for a minute and a half. `/actuator/health` includes the database check, so a Cloud SQL restart during maintenance can restart the app's instances too. The db-f1-micro tier allows 25 connections and each instance's pool opens up to 10, so two instances fit. `--allow-unauthenticated` lets anyone load the page, and the app itself asks everyone to sign in.
 
@@ -288,7 +290,7 @@ The Cloud Console shows the same logs on the service's Logs tab under Cloud Run.
 
 ## Costs
 
-The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Artifact Registry with its cleanup policy, Secret Manager and logging fit in their free tiers for a small group. Scaling to zero means the first visit after a quiet spell waits several seconds for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
+The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 140 MB for the app and its AOT cache, which comes to roughly 0.8 GB, a few cents a month past the free 0.5 GB. Scaling to zero means the first visit after a quiet spell waits a few seconds for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
 
 ```sh
 gcloud run services update dot-tracker --region=$REGION --min-instances=1
