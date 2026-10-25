@@ -22,3 +22,8 @@ export function isoDay(text) {
 export function lineClass(line) {
   return line ? `line-${line.color.toLowerCase()}` : ''
 }
+
+/** A store's link when it's a web address, and null otherwise, so a link can only ever open a web page. */
+export function webLink(url) {
+  return url && /^https?:\/\//i.test(url) ? url : null
+}

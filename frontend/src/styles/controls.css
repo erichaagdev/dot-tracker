@@ -1,5 +1,6 @@
-/* Pieces every screen shares: covers, status pills, the Own box, segmented choices, chips, selects, buttons and the
-   search field. Below 900 px every one of them is at least a 44 px touch target. */
+/* Pieces every screen shares: covers, status pills, the Own box, segmented choices, chips, selects, buttons, the
+   search field, form fields and the box that says what went wrong. Below 900 px every one of them is at least a 44 px
+   touch target. */
 .cover {
   --c: var(--l-dbl);
   width: 46px;
@@ -144,6 +145,9 @@
 }
 .btn.lg { min-height: 52px; }
 .btn.ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.danger { background: var(--danger); color: var(--on-danger); }
+.btn.ghost.danger { background: transparent; color: var(--danger); }
+.btn:disabled { opacity: .6; }
 
 .search {
   display: flex;
@@ -162,3 +166,45 @@
 .search input::placeholder { color: var(--muted); opacity: 1; }
 .search input::-webkit-search-cancel-button { display: none; }
 .search button { min-height: var(--touch); padding: 0 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--accent); font-weight: 700; font-size: var(--text-md); }
+
+/* A labeled form field. Inputs use the 16 px text size, so a phone doesn't zoom in when one gets focus. */
+.field { display: grid; gap: 6px; min-width: 0; }
+.field-label { font-size: var(--text-md); font-weight: 700; }
+.field-label small { color: var(--muted); font-size: var(--text-sm); font-weight: 500; }
+.field-row { display: flex; gap: 10px; }
+.field-row .grow { flex: 1; }
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch);
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-lg);
+}
+.input::placeholder { color: var(--muted); opacity: 1; }
+.input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+
+.select-box { position: relative; display: block; }
+.select-box select { appearance: none; padding-right: 34px; text-overflow: ellipsis; }
+.select-box .ic { position: absolute; right: 12px; top: 50%; translate: 0 -50%; color: var(--muted); pointer-events: none; }
+
+.money { position: relative; display: block; }
+.money > span { position: absolute; left: 12px; top: 50%; translate: 0 -50%; color: var(--muted); pointer-events: none; }
+.money .input { padding-left: 25px; }
+
+.message-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--progress-soft);
+  color: var(--ink);
+  font-size: var(--text-base);
+}
+.message-box p { margin: 0; }
+.message-box .ic { margin-top: 3px; color: var(--progress); }

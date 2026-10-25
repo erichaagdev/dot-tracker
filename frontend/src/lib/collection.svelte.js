@@ -29,6 +29,22 @@ export async function loadCollection() {
   }
 }
 
+/**
+ * Fetches the entries again while the screen stays as it is, as after an admin changes a book's page count, since the
+ * backend leaves out pages beyond it. If that fails, the entries on screen stay as they were.
+ */
+export async function refreshCollection() {
+  try {
+    const entries = await api.get('/api/collection')
+    for (const entry of entries) {
+      saved[entry.bookId] = entry
+      show(entry.bookId)
+    }
+  } catch {
+    // Nothing to do, the next load picks the change up
+  }
+}
+
 /** The member's entry for a book, or an untouched one for a book they haven't changed anything about. */
 export function entryFor(bookId) {
   return collection.entries[bookId] ?? untouched(bookId)
@@ -93,7 +109,7 @@ function change(book, apply, send) {
 }
 
 function show(id) {
-  collection.entries[id] = waiting[id].reduce((entry, step) => step.apply(entry), saved[id] ?? untouched(id))
+  collection.entries[id] = (waiting[id] ?? []).reduce((entry, step) => step.apply(entry), saved[id] ?? untouched(id))
 }
 
 function path(book, what) {

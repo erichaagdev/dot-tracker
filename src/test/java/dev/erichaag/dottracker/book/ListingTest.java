@@ -47,12 +47,33 @@ class ListingTest {
     assertThat(unknown.priceCents()).isNull();
   }
 
-  @Test
-  void aBlankLinkIsNoLink() {
+  @ParameterizedTest
+  @ValueSource(strings = {"", "   "})
+  void aBlankLinkIsNoLink(String url) {
     // When
-    var listing = new Listing("Turner Toys", 1499, "  ", false);
+    var listing = new Listing("Turner Toys", 1499, url, false);
 
     // Then
     assertThat(listing.url()).isNull();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"http://turnertoys.com/", "https://www.target.com/p/cabin-getaway", "HTTPS://TARGET.COM"})
+  void aWebLinkIsKept(String url) {
+    // When
+    var listing = new Listing("Turner Toys", 1499, url, false);
+
+    // Then
+    assertThat(listing.url()).isEqualTo(url);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"javascript:alert(1)", "ftp://turnertoys.com/", "turnertoys", "turnertoys.com/cabin",
+    "https://", "https:turnertoys.com", "https://turner toys.com/"})
+  void aLinkThatIsNotAWebAddressIsRefused(String url) {
+    // When / Then
+    assertThatIllegalArgumentException()
+      .isThrownBy(() -> new Listing("Turner Toys", 1499, url, false))
+      .withMessage("A store link has to start with http:// or https://.");
   }
 }

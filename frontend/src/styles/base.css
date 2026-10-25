@@ -39,6 +39,7 @@ a { color: var(--accent); }
 
 .subtle { color: var(--muted); font-size: var(--text-md); }
 .subtle b { color: var(--ink); }
+.page-title + .subtle { margin-top: 6px; }
 
 .page-title {
   margin: 0;
@@ -59,6 +60,10 @@ a { color: var(--accent); }
 .line-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; }
+
+/* A friendly line in place of a section with nothing in it yet, with somewhere to go next */
+.empty-card { display: grid; gap: 12px; justify-items: start; color: var(--muted); }
+.empty-card p { margin: 0; }
 
 @media (prefers-reduced-motion: no-preference) {
   .page, .seg button, .own, .chip, .fopt, .nav, .tab { transition: background-color .15s, color .15s, border-color .15s; }

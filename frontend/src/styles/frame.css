@@ -1,5 +1,5 @@
 /* The frame around every signed-in screen: the phone's top row and bottom tab bar, the desktop top bar, the message
-   that pops up after a refused change, and the plain screens for loading and placeholders. */
+   that pops up after a refused change, and the plain screens for loading and short messages. */
 .app { min-height: 100dvh; display: flex; flex-direction: column; }
 .main { flex: 1; min-width: 0; padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px)); }
 
@@ -54,6 +54,7 @@
 }
 
 .screen-body { display: flex; flex-direction: column; gap: 18px; padding: 6px var(--gutter) 28px; }
+.screen-body p { margin: 0; }
 
 .tabbar {
   position: fixed;
@@ -80,6 +81,10 @@
 .tab.on { color: var(--accent); font-weight: 700; }
 
 .topbar { display: none; }
+
+/* A screen with its own action bar, such as the book editor, puts it where the tab bar would be */
+.app:has(.actionbar) .tabbar { display: none; }
+.app:has(.actionbar) .main { display: flex; flex-direction: column; padding-bottom: 0; }
 
 .nav {
   display: inline-flex;
@@ -127,8 +132,8 @@
 }
 .notice button:hover { background: color-mix(in oklab, var(--surface) 14%, transparent); }
 
-.placeholder { display: grid; gap: 14px; justify-items: start; }
-.placeholder p { margin: 0; color: var(--muted); }
+.message-screen { display: grid; gap: 14px; justify-items: start; }
+.message-screen p { margin: 0; color: var(--muted); }
 
 .loading { display: grid; place-items: center; gap: 14px; min-height: 50dvh; padding: 24px var(--gutter); color: var(--muted); text-align: center; }
 .loading p { margin: 0; }

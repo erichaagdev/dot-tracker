@@ -1,0 +1,15 @@
+{
+  "name": "Dot Tracker",
+  "short_name": "Dot Tracker",
+  "description": "Keep track of your Lifelines FlowArt books.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F7F8FB",
+  "theme_color": "#F7F8FB",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

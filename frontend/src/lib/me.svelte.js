@@ -37,6 +37,16 @@ export async function signOut() {
   navigate('/', { replace: true })
 }
 
+/**
+ * Shows the sign-in screen with the reason the backend already ended the session, such as role-changed after a member
+ * changes their own role, which signs them out everywhere.
+ */
+export function signedOutBecause(reason) {
+  me.member = null
+  me.status = 'signed-out'
+  navigate(`/?signin=${reason}`, { replace: true })
+}
+
 export function isAdmin() {
   return me.member?.role === 'ADMIN'
 }

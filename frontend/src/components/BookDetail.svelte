@@ -6,7 +6,7 @@
   import RatingChoice from './RatingChoice.svelte'
   import { findLine } from '../lib/catalog.svelte.js'
   import { changeNotes, changeProgress, changeWanted, entryFor } from '../lib/collection.svelte.js'
-  import { isoDay, lineClass, price } from '../lib/format.js'
+  import { isoDay, lineClass, price, webLink } from '../lib/format.js'
   import { availabilityPill, exclusivePill, pills, wantPill } from '../lib/status.js'
 
   // Everything about one book and the member's copy of it. The parent keys it by book, so the notes draft starts over
@@ -116,8 +116,8 @@
     <div class="card buy-list">
       {#each book.listings as listing, i (i)}
         <div class="buy">
-          {#if listing.url}
-            <a href={listing.url} target="_blank" rel="noopener noreferrer">{listing.retailer}</a>
+          {#if webLink(listing.url)}
+            <a href={webLink(listing.url)} target="_blank" rel="noopener noreferrer">{listing.retailer}</a>
           {:else}
             <strong>{listing.retailer}</strong>
           {/if}

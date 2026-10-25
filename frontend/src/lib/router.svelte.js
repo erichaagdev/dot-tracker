@@ -9,6 +9,7 @@ const routes = [
   { name: 'browse', pattern: /^\/browse$/ },
   { name: 'new-book', pattern: /^\/books\/new$/ },
   { name: 'book', pattern: /^\/books\/([^/]+)$/, params: ['id'] },
+  { name: 'edit-book', pattern: /^\/books\/([^/]+)\/edit$/, params: ['id'] },
   { name: 'wishlist', pattern: /^\/wishlist$/ },
   { name: 'account', pattern: /^\/account$/ },
   { name: 'group', pattern: /^\/group$/ },

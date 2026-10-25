@@ -1,0 +1,45 @@
+/* The admin's book editor: the book's fields, a card for each store that sells it, deleting a book added by mistake,
+   and the action bar with Save. On a phone the action bar stays at the bottom of the screen in place of the tab bar. */
+
+/* The form fills the screen, so the action bar sits at the bottom even when the form is short */
+.editor { flex: 1; width: 100%; gap: 16px; padding-bottom: 0; }
+.editor .pages-field { width: 96px; flex: none; }
+.editor .price-field { width: 112px; flex: none; }
+
+/* Four choices share one row, so a long one may take two lines */
+.seg.availability button { line-height: 1.15; padding: 4px; }
+
+.store-card { display: grid; gap: 10px; padding: 12px; }
+.store-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.store-actions .btn { min-height: var(--touch); padding: 0 12px; }
+
+.delete-book { margin-top: 8px; }
+.confirm { display: grid; gap: 12px; border-color: var(--danger); background: var(--danger-soft); }
+.confirm p { color: var(--ink); font-weight: 700; }
+.confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirm .btn.ghost { background: var(--surface); }
+
+.actionbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  margin: auto calc(-1 * var(--gutter)) 0;
+  padding: 12px var(--gutter) max(12px, env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+/* The places a message shows stay on the page for screen readers, and take no room until they hold one */
+.actionbar .message-box { margin-bottom: 10px; }
+.delete-book > [role=alert] { margin-top: -10px; }
+.delete-book > [role=alert] .message-box { margin-top: 10px; }
+
+.actionbar-buttons { display: grid; }
+.actionbar .cancel { display: none; }
+
+@media (min-width: 900px) {
+  .editor { flex: none; }
+  .actionbar { margin: 8px 0 0; padding-inline: 0; background: var(--surface-2); }
+  .actionbar-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+  .actionbar .cancel { display: inline-flex; }
+}

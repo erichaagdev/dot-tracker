@@ -46,8 +46,9 @@
     {@render children()}
   </main>
 
+  <!-- A phone reaches Group from Account, so the Account tab stays lit there -->
   <nav class="tabbar" aria-label="Main">
-    {#each [...tabs, { href: '/account', label: 'Account', icon: User, routes: ['account'] }] as tab (tab.href)}
+    {#each [...tabs, { href: '/account', label: 'Account', icon: User, routes: ['account', 'group'] }] as tab (tab.href)}
       <a class="tab" class:on={on(tab.routes)} href={tab.href} aria-current={on(tab.routes) ? 'page' : undefined}>
         <tab.icon class="ic" aria-hidden="true" />{tab.label}
       </a>

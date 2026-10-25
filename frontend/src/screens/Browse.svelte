@@ -1,5 +1,6 @@
 <script>
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
+  import Pencil from '@lucide/svelte/icons/pencil'
   import AppTop from '../components/AppTop.svelte'
   import BookDetail from '../components/BookDetail.svelte'
   import BookRow from '../components/BookRow.svelte'
@@ -9,6 +10,7 @@
   import { booksByLine, catalog, findBook, findLine } from '../lib/catalog.svelte.js'
   import { entryFor } from '../lib/collection.svelte.js'
   import { lineClass } from '../lib/format.js'
+  import { isAdmin } from '../lib/me.svelte.js'
   import { viewport } from '../lib/viewport.svelte.js'
 
   // Every book in one list. From 900 px the selected book, from /books/<id>, shows in the detail column.
@@ -103,6 +105,9 @@
 
     <aside class="detail" aria-label="The book you picked">
       {#if selected}
+        {#if isAdmin()}
+          <a class="edit-link" href="/books/{selected.id}/edit"><Pencil class="ic" aria-hidden="true" />Edit book</a>
+        {/if}
         {#key selected.id}<BookDetail book={selected} />{/key}
       {:else}
         <div class="detail-empty">

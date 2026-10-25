@@ -3,11 +3,12 @@
   import Brand from '../components/Brand.svelte'
   import { route } from '../lib/router.svelte.js'
 
-  // Google sends a refused sign-in back with ?signin=not-invited, and an invite link that no longer works lands here
-  // with ?signin=invite-expired
+  // Google sends a refused sign-in back with ?signin=not-invited, an invite link that no longer works lands here with
+  // ?signin=invite-expired, and changing your own role ends your session with ?signin=role-changed
   const messages = {
     'not-invited': "That Google account isn't in the group yet, or signing in didn't finish. Ask someone in the group for an invite link, open it, and then continue with Google.",
     'invite-expired': 'This invite has expired or was already used. Ask whoever sent it for a new link.',
+    'role-changed': 'Your role changed, so you were signed out. Sign in again to keep going.',
   }
 
   const message = $derived(messages[route.query.get('signin')])

@@ -69,6 +69,7 @@ val buildFrontend = tasks.register<Exec>("buildFrontend") {
   workingDir = file("frontend")
   commandLine("sh", "-c", "npm run build")
   inputs.dir("frontend/src")
+  inputs.dir("frontend/public")
   inputs.files("frontend/index.html", "frontend/package.json", "frontend/vite.config.js")
   inputs.dir(npmInstall.map { it.outputs.files.singleFile })
   outputs.dir(layout.buildDirectory.dir("frontend"))

@@ -234,6 +234,19 @@ class BookRestControllerTest {
   }
 
   @Test
+  void aStoreLinkThatIsNotAWebAddressAnswers400WithTheReason() throws Exception {
+    // Given
+    var body = CABIN_GETAWAY.replace("\"url\": \"https://turnertoys.com/\"", "\"url\": \"javascript:alert(1)\"");
+
+    // When / Then
+    mvc.perform(withBody(post("/api/books"), body).with(admin()).with(csrf()))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+      .andExpect(jsonPath("$.detail").value("A store link has to start with http:// or https://."));
+    verifyNoInteractions(service);
+  }
+
+  @Test
   void aBookWithoutANameOrProductLineIsRefused() throws Exception {
     // When / Then
     mvc.perform(withBody(post("/api/books"), CABIN_GETAWAY.replace("\"name\"", "\"title\"")).with(admin()).with(csrf()))

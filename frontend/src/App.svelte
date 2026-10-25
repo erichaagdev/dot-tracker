@@ -6,13 +6,17 @@
   import Ready from './components/Ready.svelte'
   import Account from './screens/Account.svelte'
   import Book from './screens/Book.svelte'
+  import BookEditor from './screens/BookEditor.svelte'
   import Browse from './screens/Browse.svelte'
-  import Placeholder from './screens/Placeholder.svelte'
+  import Group from './screens/Group.svelte'
+  import Message from './screens/Message.svelte'
+  import Shelf from './screens/Shelf.svelte'
   import SignIn from './screens/SignIn.svelte'
   import Welcome from './screens/Welcome.svelte'
+  import Wishlist from './screens/Wishlist.svelte'
   import { catalog, loadCatalog } from './lib/catalog.svelte.js'
   import { collection, loadCollection } from './lib/collection.svelte.js'
-  import { loadMe, me } from './lib/me.svelte.js'
+  import { isAdmin, loadMe, me } from './lib/me.svelte.js'
   import { followLink, route } from './lib/router.svelte.js'
   import { viewport } from './lib/viewport.svelte.js'
 
@@ -54,19 +58,25 @@
     {:else if route.name === 'book'}
       <Ready><Book id={route.params.id} /></Ready>
     {:else if route.name === 'shelf'}
-      <Placeholder title="Your shelf">Your shelf is on its way. Until then, <a href="/browse">Browse</a> has every book.</Placeholder>
+      <Ready><Shelf /></Ready>
     {:else if route.name === 'wishlist'}
-      <Placeholder title="Your wishlist">Your wishlist is on its way. Until then, the Want filter in <a href="/browse">Browse</a> shows the books you want.</Placeholder>
+      <Ready><Wishlist /></Ready>
     {:else if route.name === 'account'}
       <Account />
+    {:else if (route.name === 'new-book' || route.name === 'edit-book') && !isAdmin()}
+      <Message title="Only admins can change books">An admin in your group looks after the list of books. If something needs adding or fixing, let one of them know. <a href="/browse">Browse</a> has every book there is.</Message>
     {:else if route.name === 'new-book'}
-      <Placeholder title="Add a book">Adding books is on its way.</Placeholder>
+      <Ready><BookEditor /></Ready>
+    {:else if route.name === 'edit-book'}
+      <Ready>{#key route.params.id}<BookEditor id={route.params.id} />{/key}</Ready>
+    {:else if route.name === 'group' && !isAdmin()}
+      <Message title="Only admins look after the group">To invite a friend, ask an admin in your group for an invite link. Your <a href="/">shelf</a> is right where you left it.</Message>
     {:else if route.name === 'group'}
-      <Placeholder title="Your group">Inviting friends and looking after the group is on its way.</Placeholder>
+      <Group />
     {:else if route.name === 'welcome'}
-      <Placeholder title="You're already in">You're signed in already, so there's nothing more to do with this invite. Your <a href="/">shelf</a> is ready.</Placeholder>
+      <Message title="You're already in">You're signed in already, so there's nothing more to do with this invite. Your <a href="/">shelf</a> is ready.</Message>
     {:else}
-      <Placeholder title="We couldn't find that page">The link may be old or mistyped. Your <a href="/">shelf</a> is a good place to start.</Placeholder>
+      <Message title="We couldn't find that page">The link may be old or mistyped. Your <a href="/">shelf</a> is a good place to start.</Message>
     {/if}
   </Frame>
 {/if}
