@@ -1,0 +1,112 @@
+/* Every color, size and font the app uses, for the light theme and the dark one. */
+:root {
+  --paper: #F3F4F8;
+  --paper-dot: #D6DAE5;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8FB;
+  --ink: #1C1F2E;
+  --muted: #5B6075;
+  --line: #E1E4ED;
+  --accent: #0E7774;
+  --accent-soft: #DCF0EE;
+  --on-accent: #FFFFFF;
+  --progress: #9A5700;
+  --progress-soft: #FBE9D0;
+  --done: #2B7638;
+  --done-soft: #DCEFDF;
+  --want: #AE2A65;
+  --want-soft: #F8DDE9;
+  --quiet: #636879;
+  --quiet-soft: #E8E9EF;
+  --bezel: #1A1C26;
+  --shadow: rgb(20 22 40 / .45);
+
+  /* Product line cover colors, one per family a line's color names. Related lines share one, so every Trace line is
+     teal. */
+  --l-dbl: #E2552B;
+  --l-mini: #E09A12;
+  --l-premium: #5B4AA8;
+  --l-reveal: #D9488F;
+  --l-trace: #1F9A9A;
+  --l-pop: #2F6FD0;
+  --l-glow: #6E9A1E;
+  --l-stamp: #9A6233;
+
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", -apple-system, "Segoe UI", system-ui, sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-base: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --title-sm: 22px;
+  --title-md: 26px;
+  --title-lg: 28px;
+  --title-xl: 30px;
+  --title-xxl: 32px;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+
+  --touch: 44px;
+  --gutter: 18px;
+  --tabbar-height: 64px;
+  --topbar-height: 62px;
+  --filters-width: 224px;
+  --detail-width: 372px;
+  --content-width: 640px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #11131A;
+    --paper-dot: #252935;
+    --surface: #1B1E28;
+    --surface-2: #161922;
+    --ink: #ECEEF4;
+    --muted: #A3A8BA;
+    --line: #2E3241;
+    --accent: #4FC3BD;
+    --accent-soft: #143937;
+    --on-accent: #08201F;
+    --progress: #F2AE55;
+    --progress-soft: #3A2A12;
+    --done: #74CB83;
+    --done-soft: #183320;
+    --want: #F27DB1;
+    --want-soft: #3C1B2B;
+    --quiet: #9CA1B3;
+    --quiet-soft: #2A2D39;
+    --bezel: #3A3F51;
+    --shadow: rgb(0 0 0 / .6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #11131A;
+  --paper-dot: #252935;
+  --surface: #1B1E28;
+  --surface-2: #161922;
+  --ink: #ECEEF4;
+  --muted: #A3A8BA;
+  --line: #2E3241;
+  --accent: #4FC3BD;
+  --accent-soft: #143937;
+  --on-accent: #08201F;
+  --progress: #F2AE55;
+  --progress-soft: #3A2A12;
+  --done: #74CB83;
+  --done-soft: #183320;
+  --want: #F27DB1;
+  --want-soft: #3C1B2B;
+  --quiet: #9CA1B3;
+  --quiet-soft: #2A2D39;
+  --bezel: #3A3F51;
+  --shadow: rgb(0 0 0 / .6);
+  color-scheme: dark;
+}

@@ -1,0 +1,40 @@
+/* The sign-in screen and the welcome screen an invite link lands on. Both are one column on a phone, and a card on
+   the dotted paper from 900 px. */
+.welcome {
+  min-height: 100dvh;
+  display: grid;
+  align-items: center;
+  padding: max(24px, env(safe-area-inset-top, 0px)) 26px max(40px, env(safe-area-inset-bottom, 0px));
+}
+.welcome-card { display: flex; flex-direction: column; gap: 22px; width: 100%; max-width: 420px; margin: 0 auto; }
+.welcome-card h1 { margin: 0; font: 800 var(--title-xxl)/1.1 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+.welcome-card p { margin: 0; }
+.welcome-card .lead { color: var(--muted); }
+.welcome-card .fine { color: var(--muted); font-size: var(--text-md); text-align: center; }
+
+.message-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--progress-soft);
+  color: var(--ink);
+  font-size: var(--text-base);
+}
+.message-box .ic { margin-top: 3px; color: var(--progress); }
+
+@media (min-width: 900px) {
+  .welcome {
+    background: var(--paper) radial-gradient(circle, var(--paper-dot) 1px, transparent 1.5px) 0 0 / 22px 22px;
+    padding: 48px var(--gutter);
+  }
+  .welcome-card {
+    max-width: 460px;
+    padding: 36px 36px 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    box-shadow: 0 18px 40px -18px var(--shadow);
+  }
+}

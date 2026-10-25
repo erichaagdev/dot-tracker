@@ -25,6 +25,7 @@ create table product_line (
   name text not null unique,
   default_page_count integer not null check (default_page_count > 0),
   sort_order integer not null,
+  color text not null check (color in ('DBL', 'MINI', 'PREMIUM', 'REVEAL', 'TRACE', 'POP', 'GLOW', 'STAMP')),
   version bigint not null
 );
 

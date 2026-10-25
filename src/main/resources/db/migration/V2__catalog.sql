@@ -1,22 +1,23 @@
 -- The starting catalog of 93 books across 16 product lines.
 
-insert into product_line (name, default_page_count, sort_order, version) values
-  ('Dot by Letter', 20, 1, 0),
-  ('Dot by Letter Mini', 20, 2, 0),
-  ('Dot by Letter Large Dot', 25, 3, 0),
-  ('Dot by Letter Metallic', 20, 4, 0),
-  ('Dot by Letter Premium', 20, 5, 0),
-  ('Color to Reveal', 20, 6, 0),
-  ('Color to Reveal Scented', 20, 7, 0),
-  ('Dot Pop', 20, 8, 0),
-  ('Illuminate & Create', 20, 9, 0),
-  ('Pogo Dot', 20, 10, 0),
-  ('Stamp by Shape', 20, 11, 0),
-  ('Trace by Groove', 20, 12, 0),
-  ('Trace by Letter', 20, 13, 0),
-  ('Trace by Line', 20, 14, 0),
-  ('Trace to Doodle', 20, 15, 0),
-  ('Trace Within', 20, 16, 0);
+-- Related lines share a cover color, such as every Trace line.
+insert into product_line (name, default_page_count, sort_order, color, version) values
+  ('Dot by Letter', 20, 1, 'DBL', 0),
+  ('Dot by Letter Mini', 20, 2, 'MINI', 0),
+  ('Dot by Letter Large Dot', 25, 3, 'PREMIUM', 0),
+  ('Dot by Letter Metallic', 20, 4, 'PREMIUM', 0),
+  ('Dot by Letter Premium', 20, 5, 'PREMIUM', 0),
+  ('Color to Reveal', 20, 6, 'REVEAL', 0),
+  ('Color to Reveal Scented', 20, 7, 'REVEAL', 0),
+  ('Dot Pop', 20, 8, 'POP', 0),
+  ('Illuminate & Create', 20, 9, 'GLOW', 0),
+  ('Pogo Dot', 20, 10, 'POP', 0),
+  ('Stamp by Shape', 20, 11, 'STAMP', 0),
+  ('Trace by Groove', 20, 12, 'TRACE', 0),
+  ('Trace by Letter', 20, 13, 'TRACE', 0),
+  ('Trace by Line', 20, 14, 'TRACE', 0),
+  ('Trace to Doodle', 20, 15, 'TRACE', 0),
+  ('Trace Within', 20, 16, 'TRACE', 0);
 
 -- The left joins in this insert and the next turn a name that matches nothing into a null id, which the not-null
 -- columns refuse, so a mismatch fails the migration rather than dropping a row.

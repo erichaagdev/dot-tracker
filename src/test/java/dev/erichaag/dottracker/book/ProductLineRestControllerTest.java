@@ -1,5 +1,7 @@
 package dev.erichaag.dottracker.book;
 
+import static dev.erichaag.dottracker.book.LineColor.DBL;
+import static dev.erichaag.dottracker.book.LineColor.PREMIUM;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -41,7 +43,7 @@ class ProductLineRestControllerTest {
   private static final UUID LARGE_DOT = UUID.fromString("0199a3c2-7c1e-7d4b-9a50-6f1f0e2b8c41");
 
   private static final String LARGE_DOT_BODY = """
-    {"name": "Dot by Letter Large Dot", "defaultPageCount": 25, "sortOrder": 3}
+    {"name": "Dot by Letter Large Dot", "defaultPageCount": 25, "sortOrder": 3, "color": "PREMIUM"}
     """;
 
   @Autowired
@@ -54,8 +56,8 @@ class ProductLineRestControllerTest {
   void productLinesComeBackInSortOrder() throws Exception {
     // Given
     when(service.findProductLines()).thenReturn(List.of(
-      line(DOT_BY_LETTER, "Dot by Letter", 20, 1),
-      line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3)
+      line(DOT_BY_LETTER, "Dot by Letter", 20, 1, DBL),
+      line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3, PREMIUM)
     ));
 
     // When / Then
@@ -63,10 +65,12 @@ class ProductLineRestControllerTest {
       .andExpect(status().isOk())
       .andExpect(jsonPath("$[0].id").value(DOT_BY_LETTER.toString()))
       .andExpect(jsonPath("$[0].name").value("Dot by Letter"))
+      .andExpect(jsonPath("$[0].color").value("DBL"))
       .andExpect(jsonPath("$[1].id").value(LARGE_DOT.toString()))
       .andExpect(jsonPath("$[1].name").value("Dot by Letter Large Dot"))
       .andExpect(jsonPath("$[1].defaultPageCount").value(25))
-      .andExpect(jsonPath("$[1].sortOrder").value(3));
+      .andExpect(jsonPath("$[1].sortOrder").value(3))
+      .andExpect(jsonPath("$[1].color").value("PREMIUM"));
   }
 
   @Test
@@ -81,8 +85,8 @@ class ProductLineRestControllerTest {
   @Test
   void anAdminAddsAProductLine() throws Exception {
     // Given
-    when(service.addProductLine("Dot by Letter Large Dot", 25, 3))
-      .thenReturn(line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3));
+    when(service.addProductLine("Dot by Letter Large Dot", 25, 3, PREMIUM))
+      .thenReturn(line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3, PREMIUM));
 
     // When / Then
     mvc.perform(withBody(post("/api/product-lines")).with(admin()).with(csrf()))
@@ -90,21 +94,22 @@ class ProductLineRestControllerTest {
       .andExpect(jsonPath("$.id").value(LARGE_DOT.toString()))
       .andExpect(jsonPath("$.name").value("Dot by Letter Large Dot"))
       .andExpect(jsonPath("$.defaultPageCount").value(25))
-      .andExpect(jsonPath("$.sortOrder").value(3));
-    verify(service).addProductLine("Dot by Letter Large Dot", 25, 3);
+      .andExpect(jsonPath("$.sortOrder").value(3))
+      .andExpect(jsonPath("$.color").value("PREMIUM"));
+    verify(service).addProductLine("Dot by Letter Large Dot", 25, 3, PREMIUM);
   }
 
   @Test
   void anAdminChangesAProductLine() throws Exception {
     // Given
-    when(service.updateProductLine(LARGE_DOT, "Dot by Letter Large Dot", 25, 3))
-      .thenReturn(line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3));
+    when(service.updateProductLine(LARGE_DOT, "Dot by Letter Large Dot", 25, 3, PREMIUM))
+      .thenReturn(line(LARGE_DOT, "Dot by Letter Large Dot", 25, 3, PREMIUM));
 
     // When / Then
     mvc.perform(withBody(put("/api/product-lines/{id}", LARGE_DOT)).with(admin()).with(csrf()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.id").value(LARGE_DOT.toString()));
-    verify(service).updateProductLine(LARGE_DOT, "Dot by Letter Large Dot", 25, 3);
+    verify(service).updateProductLine(LARGE_DOT, "Dot by Letter Large Dot", 25, 3, PREMIUM);
   }
 
   @Test
@@ -138,7 +143,7 @@ class ProductLineRestControllerTest {
   @Test
   void aNameAnotherLineHasAnswers400WithTheReason() throws Exception {
     // Given
-    when(service.addProductLine("Dot by Letter Large Dot", 25, 3))
+    when(service.addProductLine("Dot by Letter Large Dot", 25, 3, PREMIUM))
       .thenThrow(new IllegalArgumentException("There's already a product line called Dot by Letter Large Dot."));
 
     // When / Then
@@ -161,6 +166,34 @@ class ProductLineRestControllerTest {
     verifyNoInteractions(service);
   }
 
+  @Test
+  void aProductLineWithoutAColorIsRefused() throws Exception {
+    // When / Then
+    mvc.perform(post("/api/product-lines")
+        .with(admin())
+        .with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {"name": "Dot by Letter Large Dot", "defaultPageCount": 25, "sortOrder": 3}
+          """))
+      .andExpect(status().isBadRequest());
+    verifyNoInteractions(service);
+  }
+
+  @Test
+  void aColorOutsideTheFamiliesIsRefused() throws Exception {
+    // When / Then
+    mvc.perform(post("/api/product-lines")
+        .with(admin())
+        .with(csrf())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {"name": "Dot by Letter Large Dot", "defaultPageCount": 25, "sortOrder": 3, "color": "CHARTREUSE"}
+          """))
+      .andExpect(status().isBadRequest());
+    verifyNoInteractions(service);
+  }
+
   private static MockHttpServletRequestBuilder withBody(MockHttpServletRequestBuilder request) {
     return request.contentType(MediaType.APPLICATION_JSON).content(LARGE_DOT_BODY);
   }
@@ -177,8 +210,8 @@ class ProductLineRestControllerTest {
       .authorities(new SimpleGrantedAuthority("ROLE_MEMBER"));
   }
 
-  private static ProductLine line(UUID id, String name, int defaultPageCount, int sortOrder) {
-    var line = new ProductLine(name, defaultPageCount, sortOrder);
+  private static ProductLine line(UUID id, String name, int defaultPageCount, int sortOrder, LineColor color) {
+    var line = new ProductLine(name, defaultPageCount, sortOrder, color);
     ReflectionTestUtils.setField(line, "id", id);
     return line;
   }

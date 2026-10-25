@@ -252,7 +252,7 @@ class BookServiceTest {
   @Test
   void productLinesComeInSortOrderThenByName() {
     // Given
-    service.addProductLine("Paint by Sticker", 20, 5);
+    service.addProductLine("Paint by Sticker", 20, 5, LineColor.GLOW);
 
     // When
     var lines = service.findProductLines();
@@ -270,22 +270,23 @@ class BookServiceTest {
   }
 
   @Test
-  void addingAProductLineKeepsItsNamePageCountAndPlace() {
+  void addingAProductLineKeepsItsNamePageCountPlaceAndColor() {
     // When
-    var line = service.addProductLine("  Paint by Sticker ", 12, 17);
+    var line = service.addProductLine("  Paint by Sticker ", 12, 17, LineColor.STAMP);
 
     // Then
     assertThat(line.getId()).isNotNull();
     assertThat(line.getName()).isEqualTo("Paint by Sticker");
     assertThat(line.getDefaultPageCount()).isEqualTo(12);
     assertThat(line.getSortOrder()).isEqualTo(17);
+    assertThat(line.getColor()).isEqualTo(LineColor.STAMP);
   }
 
   @Test
   void aProductLineNameCannotBeUsedTwiceAndTheRefusalNamesTheStoredLine() {
     // When / Then
     assertThatIllegalArgumentException()
-      .isThrownBy(() -> service.addProductLine(" dot pop ", 20, 17))
+      .isThrownBy(() -> service.addProductLine(" dot pop ", 20, 17, LineColor.POP))
       .withMessage("There's already a product line called Dot Pop.");
   }
 
@@ -295,7 +296,7 @@ class BookServiceTest {
     var largeDot = line("Dot by Letter Large Dot");
 
     // When
-    var line = service.updateProductLine(id(largeDot), "Dot by Letter Large Dot", 30, 3);
+    var line = service.updateProductLine(id(largeDot), "Dot by Letter Large Dot", 30, 3, LineColor.PREMIUM);
 
     // Then
     assertThat(line.getDefaultPageCount()).isEqualTo(30);
@@ -309,7 +310,7 @@ class BookServiceTest {
 
     // When / Then
     assertThatIllegalArgumentException()
-      .isThrownBy(() -> service.updateProductLine(id(dotPop), "pogo dot", 20, 8))
+      .isThrownBy(() -> service.updateProductLine(id(dotPop), "pogo dot", 20, 8, LineColor.POP))
       .withMessage("There's already a product line called Pogo Dot.");
   }
 
@@ -319,17 +320,31 @@ class BookServiceTest {
     var dotPop = line("Dot Pop");
 
     // When
-    var line = service.updateProductLine(id(dotPop), "DOT POP", 20, 8);
+    var line = service.updateProductLine(id(dotPop), "DOT POP", 20, 8, LineColor.POP);
 
     // Then
     assertThat(line.getName()).isEqualTo("DOT POP");
   }
 
   @Test
+  void changingALinesColorIsStored() {
+    // Given
+    var dotPop = line("Dot Pop");
+
+    // When
+    service.updateProductLine(id(dotPop), "Dot Pop", 20, 8, LineColor.GLOW);
+    entityManager.flush();
+
+    // Then
+    assertThat(jdbc.sql("select color from product_line where id = ?").param(id(dotPop)).query(String.class).single())
+      .isEqualTo("GLOW");
+  }
+
+  @Test
   void changingAProductLineThatIsGoneIsRefused() {
     // When / Then
     assertThatExceptionOfType(NoSuchElementException.class)
-      .isThrownBy(() -> service.updateProductLine(UUID.randomUUID(), "Paint by Sticker", 20, 17))
+      .isThrownBy(() -> service.updateProductLine(UUID.randomUUID(), "Paint by Sticker", 20, 17, LineColor.STAMP))
       .withMessage("That product line isn't in the catalog anymore.");
   }
 

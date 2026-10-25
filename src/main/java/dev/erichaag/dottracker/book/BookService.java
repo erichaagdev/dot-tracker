@@ -96,24 +96,25 @@ public class BookService {
   }
 
   @Transactional
-  public ProductLine addProductLine(String name, int defaultPageCount, int sortOrder) {
+  public ProductLine addProductLine(String name, int defaultPageCount, int sortOrder, LineColor color) {
     var stripped = name.strip();
     productLines.findByNameIgnoreCase(stripped).ifPresent(existing -> {
       throw duplicateProductLine(existing);
     });
-    var line = productLines.save(new ProductLine(stripped, defaultPageCount, sortOrder));
+    var line = productLines.save(new ProductLine(stripped, defaultPageCount, sortOrder, color));
     logger.info("Added the product line {}", line.getName());
     return line;
   }
 
   @Transactional
-  public ProductLine updateProductLine(UUID id, String name, int defaultPageCount, int sortOrder) {
+  public ProductLine updateProductLine(UUID id, String name, int defaultPageCount, int sortOrder,
+    LineColor color) {
     var line = getProductLine(id);
     var stripped = name.strip();
     productLines.findByNameIgnoreCaseAndIdNot(stripped, id).ifPresent(existing -> {
       throw duplicateProductLine(existing);
     });
-    line.update(stripped, defaultPageCount, sortOrder);
+    line.update(stripped, defaultPageCount, sortOrder, color);
     logger.info("Changed the product line {}", line.getName());
     return line;
   }

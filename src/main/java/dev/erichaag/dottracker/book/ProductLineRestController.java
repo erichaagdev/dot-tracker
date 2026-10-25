@@ -37,25 +37,26 @@ public class ProductLineRestController {
   @PreAuthorize("hasRole('ADMIN')")
   public ProductLineResponse add(@Valid @RequestBody ProductLineRequest request) {
     return ProductLineResponse.from(
-      service.addProductLine(request.name(), request.defaultPageCount(), request.sortOrder()));
+      service.addProductLine(request.name(), request.defaultPageCount(), request.sortOrder(), request.color()));
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('ADMIN')")
   public ProductLineResponse update(@PathVariable UUID id, @Valid @RequestBody ProductLineRequest request) {
     return ProductLineResponse.from(
-      service.updateProductLine(id, request.name(), request.defaultPageCount(), request.sortOrder()));
+      service.updateProductLine(id, request.name(), request.defaultPageCount(), request.sortOrder(),
+        request.color()));
   }
 
   public record ProductLineRequest(@NotNull String name, @NotNull Integer defaultPageCount,
-    @NotNull Integer sortOrder) {
+    @NotNull Integer sortOrder, @NotNull LineColor color) {
   }
 
-  public record ProductLineResponse(UUID id, String name, int defaultPageCount, int sortOrder) {
+  public record ProductLineResponse(UUID id, String name, int defaultPageCount, int sortOrder, LineColor color) {
 
     static ProductLineResponse from(ProductLine line) {
       return new ProductLineResponse(Objects.requireNonNull(line.getId()), line.getName(),
-        line.getDefaultPageCount(), line.getSortOrder());
+        line.getDefaultPageCount(), line.getSortOrder(), line.getColor());
     }
   }
 }

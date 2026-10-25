@@ -1,0 +1,69 @@
+/* One book and your copy of it, as its own screen on a phone and as the detail column beside the list from 900 px. */
+.book-screen { display: flex; flex-direction: column; gap: 18px; padding: 6px var(--gutter) 32px; }
+
+.book-head { display: grid; gap: 10px; }
+.book-head h1 { margin: 0; font: 800 var(--title-xl)/1.1 var(--font-display); letter-spacing: -0.02em; }
+.book-head .meta { color: var(--muted); font-size: var(--text-base); }
+.book-head .tags { gap: 6px; }
+.book-screen .book-head .cover { display: none; }
+
+.own-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+
+.choice { display: grid; gap: 8px; }
+.choice-label { margin: 0; font-size: var(--text-base); font-weight: 700; }
+.choice .line-h small { color: var(--muted); font-size: var(--text-sm); }
+
+.pages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+.page {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: var(--touch);
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.page:hover { border-color: var(--accent); }
+.page.done { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+.buy-list { display: grid; padding: 2px 14px; }
+.buy { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: var(--touch); padding: 6px 0; font-size: var(--text-base); }
+.buy + .buy { border-top: 1px solid var(--line); }
+.buy a, .buy strong { font-weight: 700; }
+.buy span { color: var(--muted); text-align: right; }
+
+.note {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  resize: vertical;
+}
+.note:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+
+.missing { display: grid; gap: 14px; justify-items: start; }
+.missing p { margin: 0; color: var(--muted); }
+
+@media (min-width: 900px) {
+  .detail .book-head .cover { height: 92px; }
+  .detail .book-head h1 { font-size: var(--title-md); }
+  .detail .section-title, .detail .choice-label { font: 700 var(--text-xs)/1.2 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .detail .pages { grid-template-columns: repeat(10, 1fr); gap: 6px; }
+  .detail .page { min-width: 0; font-size: var(--text-xs); border-width: 1.5px; }
+  .detail .seg button { min-height: 38px; font-size: var(--text-sm); }
+  .detail .own { min-height: 36px; }
+  .detail .choice { gap: 6px; }
+  .detail .buy { min-height: 36px; font-size: var(--text-md); }
+  .detail .note { font-size: var(--text-md); }
+}

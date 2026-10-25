@@ -58,8 +58,8 @@ class ApplicationContextTest {
   void aRowInsertedWithoutAnIdGetsATimeOrderedUuid() {
     // When
     var id = jdbc.sql("""
-        insert into product_line (name, default_page_count, sort_order, version)
-        values ('Test line', 20, 99, 0)
+        insert into product_line (name, default_page_count, sort_order, color, version)
+        values ('Test line', 20, 99, 'DBL', 0)
         returning id
         """)
       .query(UUID.class)

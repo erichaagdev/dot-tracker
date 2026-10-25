@@ -57,6 +57,32 @@ class CatalogSeedTest {
   }
 
   @Test
+  void everyProductLineHasItsFamilysCoverColor() {
+    // When
+    var colors = jdbc.sql("select name || ' ' || color from product_line order by sort_order").query(String.class).list();
+
+    // Then
+    assertThat(colors).containsExactly(
+      "Dot by Letter DBL",
+      "Dot by Letter Mini MINI",
+      "Dot by Letter Large Dot PREMIUM",
+      "Dot by Letter Metallic PREMIUM",
+      "Dot by Letter Premium PREMIUM",
+      "Color to Reveal REVEAL",
+      "Color to Reveal Scented REVEAL",
+      "Dot Pop POP",
+      "Illuminate & Create GLOW",
+      "Pogo Dot POP",
+      "Stamp by Shape STAMP",
+      "Trace by Groove TRACE",
+      "Trace by Letter TRACE",
+      "Trace by Line TRACE",
+      "Trace to Doodle TRACE",
+      "Trace Within TRACE"
+    );
+  }
+
+  @Test
   void largeDotBooksHave25PagesAndEveryOtherBookHas20() {
     // When
     var books = jdbc.sql("""
