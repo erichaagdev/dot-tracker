@@ -14,17 +14,14 @@ import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A book in the shared catalog. Its name is trimmed and never blank, it has at least one page, and each of its other
- * names is trimmed and kept once, leaving out blanks and the book's own name. It's a store exclusive when any of its
- * listings is exclusive.
+ * A book in the shared catalog. Its name is trimmed and never blank, and it has at least one page. It's a store
+ * exclusive when any of its listings is exclusive.
  */
 @Entity
 public class Book {
@@ -36,9 +33,6 @@ public class Book {
   private UUID productLineId = new UUID(0, 0);
 
   private String name = "";
-
-  // Hibernate maps a List of a basic type to an array column, here text[]
-  private List<String> alsoKnownAs = List.of();
 
   @Enumerated(EnumType.STRING)
   private Availability availability = Availability.UNKNOWN;
@@ -60,9 +54,9 @@ public class Book {
   protected Book() {
   }
 
-  public Book(UUID productLineId, String name, List<String> alsoKnownAs, Availability availability, int pageCount,
-    List<Listing> listings, Instant now) {
-    apply(productLineId, name, alsoKnownAs, availability, pageCount, listings);
+  public Book(UUID productLineId, String name, Availability availability, int pageCount, List<Listing> listings,
+    Instant now) {
+    apply(productLineId, name, availability, pageCount, listings);
     this.createdAt = now;
     this.updatedAt = now;
   }
@@ -82,10 +76,6 @@ public class Book {
 
   public String getName() {
     return name;
-  }
-
-  public List<String> getAlsoKnownAs() {
-    return List.copyOf(alsoKnownAs);
   }
 
   public Availability getAvailability() {
@@ -112,14 +102,14 @@ public class Book {
     return updatedAt;
   }
 
-  public void update(UUID productLineId, String name, List<String> alsoKnownAs, Availability availability,
-    int pageCount, List<Listing> listings, Instant now) {
-    apply(productLineId, name, alsoKnownAs, availability, pageCount, listings);
+  public void update(UUID productLineId, String name, Availability availability, int pageCount,
+    List<Listing> listings, Instant now) {
+    apply(productLineId, name, availability, pageCount, listings);
     this.updatedAt = now;
   }
 
-  private void apply(UUID productLineId, String name, List<String> alsoKnownAs, Availability availability,
-    int pageCount, List<Listing> listings) {
+  private void apply(UUID productLineId, String name, Availability availability, int pageCount,
+    List<Listing> listings) {
     var normalized = normalizeName(name);
     if (normalized.isEmpty()) {
       throw new IllegalArgumentException("A book needs a name.");
@@ -129,23 +119,9 @@ public class Book {
     }
     this.productLineId = productLineId;
     this.name = normalized;
-    this.alsoKnownAs = otherNames(normalized, alsoKnownAs);
     this.availability = availability;
     this.pageCount = pageCount;
     this.listings.clear();
     this.listings.addAll(listings);
-  }
-
-  private static List<String> otherNames(String name, List<String> alsoKnownAs) {
-    var seen = new HashSet<String>();
-    seen.add(name.toLowerCase(Locale.ROOT));
-    var otherNames = new ArrayList<String>();
-    for (var alias : alsoKnownAs) {
-      var stripped = alias.strip();
-      if (!stripped.isEmpty() && seen.add(stripped.toLowerCase(Locale.ROOT))) {
-        otherNames.add(stripped);
-      }
-    }
-    return List.copyOf(otherNames);
   }
 }

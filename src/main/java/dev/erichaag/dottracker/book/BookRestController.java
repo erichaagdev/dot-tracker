@@ -65,14 +65,13 @@ public class BookRestController {
   public record BookRequest(
     @NotNull UUID productLineId,
     @NotNull String name,
-    @NotNull List<@NotNull String> alsoKnownAs,
     @NotNull Availability availability,
     @Nullable Integer pageCount,
     @NotNull @Valid List<@NotNull ListingRequest> listings
   ) {
 
     BookDetails details() {
-      return new BookDetails(productLineId, name, alsoKnownAs, availability, pageCount,
+      return new BookDetails(productLineId, name, availability, pageCount,
         listings.stream().map(ListingRequest::listing).toList());
     }
   }
@@ -86,13 +85,13 @@ public class BookRestController {
   }
 
   /** A book, which is a store exclusive when any of its listings is exclusive. */
-  public record BookResponse(UUID id, UUID productLineId, String name, List<String> alsoKnownAs,
-    Availability availability, int pageCount, List<ListingResponse> listings, boolean exclusive) {
+  public record BookResponse(UUID id, UUID productLineId, String name, Availability availability, int pageCount,
+    List<ListingResponse> listings, boolean exclusive) {
 
     static BookResponse from(Book book) {
       return new BookResponse(Objects.requireNonNull(book.getId()), book.getProductLineId(), book.getName(),
-        book.getAlsoKnownAs(), book.getAvailability(), book.getPageCount(),
-        book.getListings().stream().map(ListingResponse::from).toList(), book.isExclusive());
+        book.getAvailability(), book.getPageCount(), book.getListings().stream().map(ListingResponse::from).toList(),
+        book.isExclusive());
     }
   }
 

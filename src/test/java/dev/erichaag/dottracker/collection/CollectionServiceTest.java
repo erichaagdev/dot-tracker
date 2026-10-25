@@ -256,7 +256,7 @@ class CollectionServiceTest {
     var id = Objects.requireNonNull(cabinGetaway.getId());
     IntStream.of(1, 2, 3, 19, 20).forEach(page -> service.markPageDone(bea, id, page));
     bookService.update(id, new BookDetails(cabinGetaway.getProductLineId(), cabinGetaway.getName(),
-      cabinGetaway.getAlsoKnownAs(), cabinGetaway.getAvailability(), 18, cabinGetaway.getListings()));
+      cabinGetaway.getAvailability(), 18, cabinGetaway.getListings()));
 
     // When
     var tracked = service.findAll(bea).getFirst();

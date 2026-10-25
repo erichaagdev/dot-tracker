@@ -32,7 +32,6 @@ create table book (
   id uuid primary key default uuidv7(),
   product_line_id uuid not null references product_line (id),
   name text not null,
-  also_known_as text[] not null default '{}',
   availability text not null check (availability in ('AVAILABLE', 'COMING_SOON', 'RETIRED', 'UNKNOWN')),
   page_count integer not null check (page_count > 0),
   created_at timestamptz not null,

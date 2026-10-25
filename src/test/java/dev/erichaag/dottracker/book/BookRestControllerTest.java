@@ -52,7 +52,6 @@ class BookRestControllerTest {
     {
       "productLineId": "0199a3c2-7c1e-7d4b-9a50-6f1f0e2b8c40",
       "name": "Cabin Getaway",
-      "alsoKnownAs": ["Cabin Retreat"],
       "availability": "AVAILABLE",
       "listings": [
         {"retailer": "Turner Toys", "priceCents": 1499, "url": "https://turnertoys.com/", "exclusive": false},
@@ -68,7 +67,7 @@ class BookRestControllerTest {
   BookService service;
 
   @Test
-  void theCatalogComesBackWithListingsOtherNamesAndWhetherEachBookIsAStoreExclusive() throws Exception {
+  void theCatalogComesBackWithListingsAndWhetherEachBookIsAStoreExclusive() throws Exception {
     // Given
     when(service.findAll()).thenReturn(List.of(cabinGetaway()));
 
@@ -78,7 +77,6 @@ class BookRestControllerTest {
       .andExpect(jsonPath("$[0].id").value(BOOK.toString()))
       .andExpect(jsonPath("$[0].productLineId").value(DOT_BY_LETTER.toString()))
       .andExpect(jsonPath("$[0].name").value("Cabin Getaway"))
-      .andExpect(jsonPath("$[0].alsoKnownAs[0]").value("Cabin Retreat"))
       .andExpect(jsonPath("$[0].availability").value("AVAILABLE"))
       .andExpect(jsonPath("$[0].pageCount").value(20))
       .andExpect(jsonPath("$[0].listings[0].retailer").value("Turner Toys"))
@@ -136,8 +134,7 @@ class BookRestControllerTest {
       .andExpect(status().isCreated())
       .andExpect(jsonPath("$.id").value(BOOK.toString()))
       .andExpect(jsonPath("$.name").value("Cabin Getaway"));
-    verify(service).add(new BookDetails(DOT_BY_LETTER, "Cabin Getaway", List.of("Cabin Retreat"),
-      Availability.AVAILABLE, null, listings()));
+    verify(service).add(new BookDetails(DOT_BY_LETTER, "Cabin Getaway", Availability.AVAILABLE, null, listings()));
   }
 
   @Test
@@ -150,8 +147,8 @@ class BookRestControllerTest {
     mvc.perform(withBody(put("/api/books/{id}", BOOK), body).with(admin()).with(csrf()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.id").value(BOOK.toString()));
-    verify(service).update(BOOK, new BookDetails(DOT_BY_LETTER, "Cabin Getaway", List.of("Cabin Retreat"),
-      Availability.AVAILABLE, 24, listings()));
+    verify(service).update(BOOK, new BookDetails(DOT_BY_LETTER, "Cabin Getaway", Availability.AVAILABLE, 24,
+      listings()));
   }
 
   @Test
@@ -269,8 +266,8 @@ class BookRestControllerTest {
   }
 
   private static Book cabinGetaway() {
-    var book = new Book(DOT_BY_LETTER, "Cabin Getaway", List.of("Cabin Retreat"), Availability.AVAILABLE, 20,
-      listings(), Instant.parse("2026-10-01T15:30:00Z"));
+    var book = new Book(DOT_BY_LETTER, "Cabin Getaway", Availability.AVAILABLE, 20, listings(),
+      Instant.parse("2026-10-01T15:30:00Z"));
     ReflectionTestUtils.setField(book, "id", BOOK);
     return book;
   }

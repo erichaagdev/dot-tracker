@@ -84,7 +84,6 @@ class BookServiceTest {
 
     // Then
     assertThat(found.getName()).isEqualTo("Lovestruck");
-    assertThat(found.getAlsoKnownAs()).containsExactly("Made with Love", "Lovestruck/Made with Love");
     assertThat(found.getAvailability()).isEqualTo(Availability.RETIRED);
     assertThat(found.getListings()).containsExactly(new Listing("Lifelines", 1299, null, false));
   }
@@ -127,15 +126,14 @@ class BookServiceTest {
   }
 
   @Test
-  void otherNamesAndListingsAreStoredAndReadBackInOrder() {
+  void listingsAreStoredAndReadBackInOrder() {
     // Given
     var listings = List.of(
       new Listing("Turner Toys", 1499, "https://turnertoys.com/", false),
       new Listing("Target", null, null, true),
       new Listing("Lifelines", 1299, null, false)
     );
-    var details = new BookDetails(id(line("Dot by Letter")), "Harvest Moon", List.of("Harvest Night", "Moon Harvest"),
-      Availability.COMING_SOON, null, listings);
+    var details = new BookDetails(id(line("Dot by Letter")), "Harvest Moon", Availability.COMING_SOON, null, listings);
     var id = id(service.add(details));
     entityManager.flush();
     entityManager.clear();
@@ -144,11 +142,8 @@ class BookServiceTest {
     var book = service.getById(id);
 
     // Then
-    assertThat(book.getAlsoKnownAs()).containsExactly("Harvest Night", "Moon Harvest");
     assertThat(book.getListings()).isEqualTo(listings);
     assertThat(book.isExclusive()).isTrue();
-    assertThat(jdbc.sql("select also_known_as::text from book where id = ?").param(id).query(String.class).single())
-      .isEqualTo("{\"Harvest Night\",\"Moon Harvest\"}");
   }
 
   @Test
@@ -181,14 +176,13 @@ class BookServiceTest {
     // Given
     var winterGlow = seeded("Dot by Letter", "Winter's Glow");
     var addedAt = winterGlow.getCreatedAt();
-    var details = new BookDetails(id(line("Dot by Letter")), "Winter's Glow", List.of("Winters Glow"),
-      Availability.AVAILABLE, 24, List.of(new Listing("Turner Toys", 1599, null, false)));
+    var details = new BookDetails(id(line("Dot by Letter")), "Winter's Glow", Availability.AVAILABLE, 24,
+      List.of(new Listing("Turner Toys", 1599, null, false)));
 
     // When
     var book = service.update(id(winterGlow), details);
 
     // Then
-    assertThat(book.getAlsoKnownAs()).containsExactly("Winters Glow");
     assertThat(book.getAvailability()).isEqualTo(Availability.AVAILABLE);
     assertThat(book.getPageCount()).isEqualTo(24);
     assertThat(book.getListings()).containsExactly(new Listing("Turner Toys", 1599, null, false));
@@ -356,7 +350,7 @@ class BookServiceTest {
   }
 
   private static BookDetails details(UUID productLineId, String name, @Nullable Integer pageCount) {
-    return new BookDetails(productLineId, name, List.of(), Availability.AVAILABLE, pageCount, List.of());
+    return new BookDetails(productLineId, name, Availability.AVAILABLE, pageCount, List.of());
   }
 
   private static UUID id(ProductLine line) {

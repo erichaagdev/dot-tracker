@@ -23,7 +23,7 @@ class BookTest {
   @Test
   void theNameIsTrimmed() {
     // When
-    var book = book("  Cabin Getaway ", List.of(), List.of());
+    var book = book("  Cabin Getaway ", List.of());
 
     // Then
     assertThat(book.getName()).isEqualTo("Cabin Getaway");
@@ -34,7 +34,7 @@ class BookTest {
   void aBlankNameIsRefused(String name) {
     // When / Then
     assertThatIllegalArgumentException()
-      .isThrownBy(() -> book(name, List.of(), List.of()))
+      .isThrownBy(() -> book(name, List.of()))
       .withMessage("A book needs a name.");
   }
 
@@ -43,34 +43,15 @@ class BookTest {
   void aBookNeedsAtLeastOnePage(int pageCount) {
     // When / Then
     assertThatIllegalArgumentException()
-      .isThrownBy(() -> new Book(DOT_BY_LETTER, "Cabin Getaway", List.of(), Availability.AVAILABLE, pageCount,
-        List.of(), ADDED))
+      .isThrownBy(() -> new Book(DOT_BY_LETTER, "Cabin Getaway", Availability.AVAILABLE, pageCount, List.of(),
+        ADDED))
       .withMessage("A book needs at least one page.");
-  }
-
-  @Test
-  void otherNamesAreTrimmedAndKeptOnceIgnoringCase() {
-    // When
-    var book = book("Lovestruck", List.of(" Made with Love ", "made with love", "Lovestruck/Made with Love"),
-      List.of());
-
-    // Then
-    assertThat(book.getAlsoKnownAs()).containsExactly("Made with Love", "Lovestruck/Made with Love");
-  }
-
-  @Test
-  void blankOtherNamesAndTheBooksOwnNameAreLeftOut() {
-    // When
-    var book = book("Snowflake Serenity", List.of(" ", "snowflake serenity", "Snowfall Serenity"), List.of());
-
-    // Then
-    assertThat(book.getAlsoKnownAs()).containsExactly("Snowfall Serenity");
   }
 
   @Test
   void aBookWithAnExclusiveListingIsAStoreExclusive() {
     // When
-    var book = book("Cabin Getaway", List.of(), List.of(turnerToys(), new Listing("Target", null, null, true)));
+    var book = book("Cabin Getaway", List.of(turnerToys(), new Listing("Target", null, null, true)));
 
     // Then
     assertThat(book.isExclusive()).isTrue();
@@ -79,7 +60,7 @@ class BookTest {
   @Test
   void aBookWithoutAnExclusiveListingIsNotAStoreExclusive() {
     // When
-    var book = book("Winter's Glow", List.of(), List.of(turnerToys()));
+    var book = book("Winter's Glow", List.of(turnerToys()));
 
     // Then
     assertThat(book.isExclusive()).isFalse();
@@ -88,7 +69,7 @@ class BookTest {
   @Test
   void aNewBookWasAddedAndLastChangedAtTheSameTime() {
     // When
-    var book = book("Cabin Getaway", List.of(), List.of());
+    var book = book("Cabin Getaway", List.of());
 
     // Then
     assertThat(book.getCreatedAt()).isEqualTo(ADDED);
@@ -98,17 +79,15 @@ class BookTest {
   @Test
   void updatingABookChangesEverythingAndWhenItWasLastChanged() {
     // Given
-    var book = book("Cabin Getaway", List.of("Cabin Retreat"), List.of(turnerToys()));
+    var book = book("Cabin Getaway", List.of(turnerToys()));
     var target = new Listing("Target", 1299, "https://www.target.com/", true);
 
     // When
-    book.update(TRACE_BY_LINE, " Fall Harvest ", List.of("Harvest"), Availability.RETIRED, 24, List.of(target),
-      CHANGED);
+    book.update(TRACE_BY_LINE, " Fall Harvest ", Availability.RETIRED, 24, List.of(target), CHANGED);
 
     // Then
     assertThat(book.getProductLineId()).isEqualTo(TRACE_BY_LINE);
     assertThat(book.getName()).isEqualTo("Fall Harvest");
-    assertThat(book.getAlsoKnownAs()).containsExactly("Harvest");
     assertThat(book.getAvailability()).isEqualTo(Availability.RETIRED);
     assertThat(book.getPageCount()).isEqualTo(24);
     assertThat(book.getListings()).containsExactly(target);
@@ -119,19 +98,19 @@ class BookTest {
   @Test
   void aRefusedUpdateLeavesTheBookAsItWas() {
     // Given
-    var book = book("Cabin Getaway", List.of(), List.of(turnerToys()));
+    var book = book("Cabin Getaway", List.of(turnerToys()));
 
     // When / Then
     assertThatIllegalArgumentException().isThrownBy(() ->
-      book.update(TRACE_BY_LINE, "Fall Harvest", List.of(), Availability.RETIRED, 0, List.of(), CHANGED));
+      book.update(TRACE_BY_LINE, "Fall Harvest", Availability.RETIRED, 0, List.of(), CHANGED));
     assertThat(book.getProductLineId()).isEqualTo(DOT_BY_LETTER);
     assertThat(book.getName()).isEqualTo("Cabin Getaway");
     assertThat(book.getListings()).containsExactly(turnerToys());
     assertThat(book.getUpdatedAt()).isEqualTo(ADDED);
   }
 
-  private static Book book(String name, List<String> alsoKnownAs, List<Listing> listings) {
-    return new Book(DOT_BY_LETTER, name, alsoKnownAs, Availability.AVAILABLE, 20, listings, ADDED);
+  private static Book book(String name, List<Listing> listings) {
+    return new Book(DOT_BY_LETTER, name, Availability.AVAILABLE, 20, listings, ADDED);
   }
 
   private static Listing turnerToys() {

@@ -56,8 +56,8 @@ public class BookService {
     books.findByProductLineIdAndNameIgnoreCase(id(line), name).ifPresent(existing -> {
       throw duplicateBook(line, existing);
     });
-    var book = books.save(new Book(id(line), name, details.alsoKnownAs(), details.availability(),
-      pageCount(details, line), details.listings(), clock.instant()));
+    var book = books.save(new Book(id(line), name, details.availability(), pageCount(details, line),
+      details.listings(), clock.instant()));
     logger.info("Added {} to {}", book.getName(), line.getName());
     return book;
   }
@@ -72,8 +72,8 @@ public class BookService {
     books.findByProductLineIdAndNameIgnoreCaseAndIdNot(id(line), name, id).ifPresent(existing -> {
       throw duplicateBook(line, existing);
     });
-    book.update(id(line), name, details.alsoKnownAs(), details.availability(), pageCount(details, line),
-      details.listings(), clock.instant());
+    book.update(id(line), name, details.availability(), pageCount(details, line), details.listings(),
+      clock.instant());
     logger.info("Changed {} in {}", book.getName(), line.getName());
     return book;
   }
@@ -141,7 +141,7 @@ public class BookService {
   }
 
   /** What an admin gives a book. Without a page count, the book gets its product line's default. */
-  public record BookDetails(UUID productLineId, String name, List<String> alsoKnownAs, Availability availability,
-    @Nullable Integer pageCount, List<Listing> listings) {
+  public record BookDetails(UUID productLineId, String name, Availability availability, @Nullable Integer pageCount,
+    List<Listing> listings) {
   }
 }
