@@ -40,6 +40,7 @@ build.gradle.kts, settings.gradle.kts, gradle/libs.versions.toml
 CLAUDE.md                         Conventions every change follows
 compose.yaml                      Postgres 18 for local runs
 docs/plans/                       This plan and the overview
+docs/deploy.md                    The first deploy to Google Cloud and every redeploy
 docs/mockups/index.html           Screen mockups
 src/main/java/dev/erichaag/dottracker/
   DotTrackerApplication.java, DotTrackerProperties.java, DemoSeeder.java
@@ -297,16 +298,16 @@ Docker Desktop has to be running for local runs and for tests. `compose.yaml` de
 
 The app runs on Google Cloud, in one project in `us-central1`.
 
-- Cloud Run runs the container image that `gain bootBuildImage` builds, pulled from Artifact Registry. The task sets `imagePlatform = "linux/amd64"`, since Cloud Run runs amd64 and a Mac builds arm64 by default. The service gets 512 MB of memory, startup CPU boost and between 0 and 2 instances. Scaling to zero keeps it free, at the cost of a few seconds' wait on the first visit after a quiet spell, and a minimum of 1 instance removes that wait for roughly $10 more a month. Sessions live in Postgres, so any instance serves any request.
-- Cloud SQL for PostgreSQL 18 holds the data, on the smallest shared-core tier with automated daily backups. It's created with `--edition=ENTERPRISE --tier=db-f1-micro`, because new Postgres instances otherwise default to the much pricier Enterprise Plus edition.
-- The app reaches Cloud SQL through the Cloud SQL Java connector, which handles TLS and authorizes through the Cloud Run service account's `roles/cloudsql.client`, so the instance needs no authorized networks. The datasource URL is `jdbc:postgresql:///dottracker?cloudSqlInstance=<project>:us-central1:<instance>&socketFactory=com.google.cloud.sql.postgres.SocketFactory`.
+- Cloud Run runs the container image that `gain bootBuildImage` builds, pulled from Artifact Registry, whose cleanup policy keeps the five newest images. The task sets `imagePlatform = "linux/amd64"`, since Cloud Run runs amd64 and a Mac builds arm64 by default. The service gets 1 GiB of memory, startup CPU boost and between 0 and 2 instances. The buildpack's memory calculator reserves about 670 MiB for thread stacks, the code cache and the metaspace before it sizes the heap, so the image doesn't start in 512 MiB, and in 1 GiB the app settles at about 335 MiB of committed JVM memory. Scaling to zero keeps it free, at the cost of a few seconds' wait on the first visit after a quiet spell, and a minimum of 1 instance removes that wait for roughly $13 more a month. Sessions live in Postgres, so any instance serves any request.
+- Cloud SQL for PostgreSQL 18 holds the data, on the smallest shared-core tier with automated daily backups. It's created with `--edition=enterprise --tier=db-f1-micro`, because new Postgres instances otherwise default to the much pricier Enterprise Plus edition.
+- The app reaches Cloud SQL through the Cloud SQL Java connector, which handles TLS and authorizes through IAM, so the instance keeps its public IP with no authorized networks. The service runs as its own `dot-tracker-run` service account, which has `roles/cloudsql.client` on the project and access to the two secrets below, and nothing else. The datasource URL is `jdbc:postgresql:///dottracker?cloudSqlInstance=<project>:us-central1:<instance>&socketFactory=com.google.cloud.sql.postgres.SocketFactory`.
 - Secret Manager holds the database password and the Google client secret. Cloud Run gets `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `DOT_TRACKER_ADMIN_EMAILS` as environment variables, with the secrets referenced from Secret Manager.
-- The Google OAuth client lives in the same project. Until a domain is chosen, the app is reached at the `run.app` address Cloud Run gives the service, and the client's redirect URI uses that address. A custom domain later only changes the redirect URI.
+- The Google OAuth client lives in the same project, made by hand in the Cloud Console, since `gcloud` can't create a web client. Its audience is External and published to production, with only the `openid`, `email` and `profile` scopes. Until a domain is chosen, the app is reached at Cloud Run's deterministic address, `https://dot-tracker-<project number>.us-central1.run.app`, which is known before the first deploy, so the client's redirect URIs are set up front. They are that address and `http://localhost:8080`, each followed by `/login/oauth2/code/google`. A custom domain later only changes the redirect URI.
 - Cloud Run's startup and liveness probes use `/actuator/health`, the only actuator endpoint exposed. `server.forward-headers-strategy=framework` makes redirects use `https` behind Cloud Run's front end.
 
 The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the instance and $1.70 for its 10 GB minimum of SSD storage. Cloud Run, Artifact Registry, Secret Manager, logging and egress for a small group all fit in their free tiers, as long as Artifact Registry keeps only the last few images.
 
-`docs/deploy.md` holds the one-time `gcloud` setup and the deploy steps. Deploying is `gain bootBuildImage` tagged for Artifact Registry, a `docker push` and a `gcloud run deploy` with the new image.
+`docs/deploy.md` holds the one-time setup, run in a named `gcloud` configuration of its own so a work configuration stays untouched, and the deploy steps. Deploying is `gain bootBuildImage` tagged with the commit for Artifact Registry, a `docker push` and a `gcloud run deploy` with the new image, which keeps every other setting of the running service.
 
 ## Build order for the first version
 
@@ -318,7 +319,7 @@ The first version is built in seven phases, each finished, reviewed and passing 
 4. Collections. Build the collection domain, with `CollectionEntry` and the collection rules' unit tests, `CollectionService`, `CollectionRestController` and their tests. Add `DemoSeeder`'s collections for the demo members. Make `DELETE /api/books/{id}` refuse a book once anyone has an entry for it, in favor of marking it retired, since until then it deletes any book.
 5. The frontend foundation and the main screens. Add tokens and fonts from the mockups, the responsive frame with its tab bar and top bar, the router, `api.js`, the stores and the sign-in and welcome screens, then the Browse and Book screens with the page grid, ratings, notes and the desktop list-and-detail layout.
 6. The remaining screens. Build Shelf, Wishlist and Account, and the admin screens, which are the book editor and the Group screen with invites and roles.
-7. Deploy. Write `docs/deploy.md`, create the Google Cloud resources and the Google client, sign in as the first admin and walk through every screen on a phone and a desktop. Then she invites her friends.
+7. Deploy. `docs/deploy.md` is written, and the app's owner runs it to create the Google Cloud resources and the Google client, deploy the app, sign in as the first admin and walk through every screen on a phone and a desktop. Then she invites her friends.
 
 ## Later work
 
