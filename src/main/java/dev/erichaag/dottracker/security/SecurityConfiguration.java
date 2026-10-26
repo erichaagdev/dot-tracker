@@ -7,6 +7,7 @@ import dev.erichaag.dottracker.member.MemberService;
 import java.util.Objects;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
@@ -31,6 +32,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
  */
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
+@ImportRuntimeHints(SessionRuntimeHints.class)
 public class SecurityConfiguration {
 
   /**

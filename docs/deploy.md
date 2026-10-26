@@ -88,7 +88,7 @@ gcloud billing budgets create --billing-account=$BILLING_ACCOUNT --display-name=
 
 ### 5. Create the image repository
 
-The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage to roughly 0.8 GB, as "Costs" explains. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
+The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage to roughly 0.6 GB, as "Costs" explains. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
 
 ```sh
 gcloud artifacts repositories create dot-tracker --repository-format=docker --location=$REGION \
@@ -186,7 +186,7 @@ docker push $IMAGE:$TAG
 
 `./gradlew bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
 
-The build also records a JVM AOT cache that the image starts with, which roughly halves the app's startup time. The buildpack starts the app once as a training run, which stops as soon as the app's context is ready, and saves the classes it loaded already parsed and linked. No database is reachable during the build, so `build.gradle.kts` gives that run a datasource URL with no database behind it and turns off Flyway and Hibernate's schema checks for that run only. Spring Session still asks for the database's name once, so the build log shows a warning about a refused connection to `localhost:5432`, which is expected. The cache goes into one layer with the app and its libraries, about 140 MB compressed, and that layer changes with every build, so each push uploads about 140 MB.
+The image is a GraalVM native image, which the buildpack compiles ahead of time from the app and its libraries. That takes about 3 minutes and up to about 14 GB of memory for an arm64 build on an Apple silicon Mac with 18 cores, since the compiler sizes its heap to the machine it runs on. The amd64 build that Cloud Run needs runs under emulation on Apple silicon and is very slow, so give it time and give Docker plenty of memory. Only the first deploy has to build here, since the GitHub workflow in step 12 builds every later one. The executable goes into a layer of about 117 MB compressed, measured on arm64, and that layer changes with every build, so each push uploads about that much.
 
 ### 10. Deploy
 
@@ -214,7 +214,7 @@ gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
   --liveness-probe=httpGet.path=/actuator/health,periodSeconds=30,timeoutSeconds=5,failureThreshold=3
 ```
 
-The service gets 1 GiB of memory because the buildpack's memory calculator sizes the JVM from the container's limit. Its fixed regions, which are 250 thread stacks, a 240 MiB code cache and the metaspace, need about 670 MiB before the heap gets anything, so the image refuses to start in 512 MiB. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB, the app started in about 2.6 seconds and the container used about 240 MiB once it was up, where the same build without the AOT cache took about 5.1 seconds and 270 MiB. After 5,000 requests to the pages and endpoints that need no sign-in, the JVM had committed about 240 MiB and the container used about 270 MiB.
+The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 125 MiB once it was up and about 160 MiB after 5,000 requests to its pages, files and API, signed in and not. That suggests 512 MiB would do, and the service stays at 1 GiB until Cloud Run's own metrics show what the image uses there. Its startup time on Cloud Run hasn't been measured yet.
 
 The startup probe gives a new instance two minutes to answer `/actuator/health`, and the liveness probe restarts an instance that stops answering for a minute and a half. `/actuator/health` includes the database check, so a Cloud SQL restart during maintenance can restart the app's instances too. The db-f1-micro tier allows 25 connections and each instance's pool opens up to 10, so two instances fit. `--allow-unauthenticated` lets anyone load the page, and the app itself asks everyone to sign in.
 
@@ -306,9 +306,9 @@ The push starts the first run, which deploys the commit that's already running. 
 
 ## Redeploying
 
-Every push to `main` deploys through `.github/workflows/deploy.yml`, and `gh workflow run deploy.yml` or the Run workflow button on the Actions tab deploys `main` again without a new commit. A failed build or test stops the run before anything is pushed, and the running version keeps serving. Pushes that land while a run is going wait for it, and only the newest of them deploys next.
+Every push to `main` deploys through `.github/workflows/deploy.yml`, and its `workflow_dispatch` trigger lets `gh workflow run deploy.yml` or the Run workflow button on the Actions tab deploy `main` again without a new commit. That's the way to redeploy without a push, since on an Apple silicon Mac the amd64 native image builds under emulation, which is very slow. A failed build or test stops the run before anything is pushed, and the running version keeps serving. Pushes that land while a run is going wait for it, and only the newest of them deploys next.
 
-To deploy from this machine instead, build, push and deploy by hand.
+To deploy from this machine anyway, build, push and deploy by hand.
 
 ```sh
 export CLOUDSDK_ACTIVE_CONFIG_NAME=dot-tracker
@@ -343,9 +343,27 @@ gcloud components install beta log-streaming
 
 The Cloud Console shows the same logs on the service's Logs tab under Cloud Run.
 
+Every start logs five warnings that are expected in a native image. Four come from Flyway, saying it's unable to scan `/db/migration` because of an unsupported protocol, `resource`. Flyway's own scanner can't read files inside a native image, and Spring Boot hands it the migrations another way, so the lines after them still show the migrations validated. The fifth comes from Micrometer, saying GC notifications won't be available, since a native image has no garbage collector beans to watch.
+
+## Checking a native image locally
+
+The tests run on the JVM, so a hint a native image is missing only shows when the image runs. A change that keeps something new in the session, adds a library or reaches a class by reflection is worth checking this way before it ships. On an Apple silicon Mac, build the image for arm64, which runs natively and takes a few minutes, and run it against the Postgres in `compose.yaml`. The compose network is named after the folder the repository is in, so it's `dot-tracker_default` for a folder named `dot-tracker`.
+
+```sh
+./gradlew bootBuildImage --imagePlatform=linux/arm64 --imageName=dot-tracker-native:arm64
+docker compose up -d postgres
+docker run --rm --name dot-tracker-native --network dot-tracker_default -p 8080:8080 --cpus=1 --memory=1g \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dottracker \
+  -e SPRING_DATASOURCE_USERNAME=dottracker -e SPRING_DATASOURCE_PASSWORD=dottracker \
+  -e GOOGLE_CLIENT_ID=dummy -e GOOGLE_CLIENT_SECRET=dummy -e DOT_TRACKER_ADMIN_EMAILS=admin@example.com \
+  dot-tracker-native:arm64
+```
+
+Nobody can sign in with a made-up Google client, but http://localhost:8080/oauth2/authorization/google still stores Google's authorization request in the session and redirects to Google, which shows the session works. A missing hint shows in the log as an error naming the type, such as a `MissingReflectionRegistrationError` or a `SerializationConstructorAccessor class not found`. What the session holds goes in `SessionRuntimeHints`, and anything else in a registrar like `PersistenceRuntimeHints`. Then `docker compose down` stops Postgres.
+
 ## Costs
 
-The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 140 MB for the app and its AOT cache, which comes to roughly 0.8 GB, a few cents a month past the free 0.5 GB. GitHub Actions is free for a public repository, and a private one's runs count against the Actions minutes that come with the GitHub plan each month. Scaling to zero means the first visit after a quiet spell waits a few seconds for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
+The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 117 MB for the native executable, which comes to roughly 0.6 GB, a few cents a month past the free 0.5 GB. GitHub Actions is free for a public repository, and a private one's runs count against the Actions minutes that come with the GitHub plan each month. Building the native image makes each run take longer, so a deploy uses more of those minutes. Scaling to zero means the first visit after a quiet spell waits for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
 
 ```sh
 gcloud run services update dot-tracker --region=$REGION --min-instances=1

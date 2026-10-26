@@ -3,6 +3,7 @@ java = "25"
 spring-boot = "4.1.2"
 errorprone = "2.51.0"
 errorprone-plugin = "5.1.1"
+graalvm-native-plugin = "1.1.17"
 nullaway = "0.14.3"
 postgres-socket-factory = "1.30.2"
 
@@ -44,4 +45,5 @@ testcontainers = ["spring-testcontainers", "testcontainers-postgresql", "testcon
 
 [plugins]
 errorprone = { id = "net.ltgt.errorprone", version.ref = "errorprone-plugin" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-native-plugin" }
 spring = { id = "org.springframework.boot", version.ref = "spring-boot" }

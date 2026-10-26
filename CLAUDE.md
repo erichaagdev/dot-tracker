@@ -16,6 +16,7 @@ The people using it are hobbyists on their phones, not developers. Every screen 
 - `gain bootTestRun` runs the app on port 8889 with the demo profile, a throwaway database and three demo members, `ana@example.com` as an admin and `bea@example.com` and `cam@example.com` as members, all with the password `demo`.
 - `gain bootRun` runs the app on port 8080 against the Postgres in `compose.yaml`, with a Google OAuth client read from a git-ignored `.env`.
 - `npm run dev` in `frontend` serves the frontend with hot reload on port 5173 and proxies to the demo app on port 8889.
+- `gain bootBuildImage --imagePlatform=linux/arm64 --imageName=dot-tracker-native:arm64` builds the production native image for this Mac in a few minutes, and "Checking a native image locally" in `docs/deploy.md` runs it against Postgres. The tests and `gain bootTestRun` always run on the JVM.
 
 ## The rule behind every backend choice
 
@@ -24,11 +25,13 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 ## Backend
 
 - Code is organized by domain, never by layer. Each domain is a package named after its noun, such as `member`, `book` or `collection`, holding its entity, repository, service and controller side by side. No `controller`, `service` or `repository` packages. Cross-cutting code sits in the root package `dev.erichaag.dottracker`, and sign-in code in `security`.
-- Every package has a `package-info.java` marked `@NullMarked`. Types are non-null unless annotated `@Nullable` from `org.jspecify.annotations`, and NullAway runs through Error Prone on every compile, so a possible null dereference fails the build. Fix the code rather than suppressing a NullAway or Error Prone finding.
+- Every package has a `package-info.java` marked `@NullMarked`. Types are non-null unless annotated `@Nullable` from `org.jspecify.annotations`, and NullAway runs through Error Prone on every compile of the app's own code, so a possible null dereference fails the build. Fix the code rather than suppressing a NullAway or Error Prone finding.
 - DTOs, request and response bodies and configuration properties are records. Entities are plain classes.
 - Configuration lives in `application.yaml` under `dot-tracker.*` in kebab case and binds to `@ConfigurationProperties` records. Demo overrides go in `application-demo.yaml`.
 - Wire beans with stereotypes and constructor injection. A bean that only exists in one mode carries `@Profile("demo")` or `@Profile("!demo")`.
 - Inject a `Clock` wherever the current time matters, so tests can fix it. `ClockConfiguration` provides one in `America/Chicago`.
+- Production runs as a GraalVM native image. Profiles and conditions are fixed when it's built, so the demo beans aren't in it, and a property set at startup can change a value but never which beans exist.
+- A native image reaches a class through reflection or serialization only when a hint names it. Anything new kept in the session gets a serialization hint in `security/SessionRuntimeHints`, and anything else that Spring and the library leave out goes in a `RuntimeHintsRegistrar` like `PersistenceRuntimeHints`. The JVM tests can't catch a missing hint, so check such a change by building the image and running it.
 
 ## Persistence
 

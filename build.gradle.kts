@@ -4,8 +4,11 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
   java
   alias(libs.plugins.errorprone)
+  alias(libs.plugins.graalvm.native)
   alias(libs.plugins.spring)
 }
+
+group = "dev.erichaag"
 
 java {
   toolchain {
@@ -46,6 +49,15 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
+// The AOT tasks compile code that Spring generates for the native image, which isn't ours to check
+tasks.named<JavaCompile>("compileAotJava") {
+  options.errorprone.enabled = false
+}
+
+tasks.named<JavaCompile>("compileAotTestJava") {
+  options.errorprone.enabled = false
+}
+
 tasks.test {
   useJUnitPlatform()
 }
@@ -53,21 +65,6 @@ tasks.test {
 tasks.bootBuildImage {
   imagePlatform = "linux/amd64"
   environment.put("BP_JVM_VERSION", libs.versions.java)
-  environment.put("BP_JVM_AOTCACHE_ENABLED", "true")
-  // The training run starts the app during the image build, where no database is reachable. These settings apply to
-  // that run only. They give the datasource a URL with no database behind it and keep Flyway and Hibernate from
-  // connecting, while the rest of the context still starts. Spring Session's JdbcTemplate still asks the database for
-  // its name once, which fails fast and only logs a warning.
-  environment.put(
-    "TRAINING_RUN_JAVA_TOOL_OPTIONS",
-    listOf(
-      "-Dspring.datasource.url=jdbc:postgresql://localhost/dottracker",
-      "-Dspring.flyway.enabled=false",
-      "-Dspring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect",
-      "-Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false",
-      "-Dspring.jpa.hibernate.ddl-auto=none",
-    ).joinToString(" "),
-  )
 }
 
 // npm runs through a shell so it's found on the PATH of the shell that started the build, where mise puts the Node
