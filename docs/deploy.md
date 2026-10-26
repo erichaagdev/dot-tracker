@@ -231,8 +231,6 @@ Open `$SERVICE_URL`, choose Continue with Google and sign in with one of the adm
 
 Then walk through every screen on a phone and on a desktop.
 
-Once the first deploy works, delete the sentence in CLAUDE.md's "Persistence" section that lets `V1__schema.sql` and `V2__catalog.sql` change in place, since production has now applied them.
-
 The app never uses its Google credentials until someone signs in, so a mistake in them doesn't stop it from starting and only shows at sign-in.
 
 - A wrong or missing client ID stops at a Google error page saying "Error 401: invalid_client" and "The OAuth client was not found." Check `GOOGLE_CLIENT_ID`.

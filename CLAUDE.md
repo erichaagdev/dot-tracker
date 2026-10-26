@@ -32,7 +32,7 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 
 ## Persistence
 
-- Every schema change is a Flyway migration, `V<n>__<description>.sql` in `src/main/resources/db/migration`, the only place SQL is written. Nothing is deployed yet, so a missed column or seed row goes into `V1__schema.sql` or `V2__catalog.sql` in place rather than a new migration. Once the app is deployed, an applied migration never changes. Hibernate runs with `ddl-auto=validate`, so an entity that disagrees with its table stops the app at startup.
+- Every schema change is a Flyway migration, `V<n>__<description>.sql` in `src/main/resources/db/migration`, the only place SQL is written. An applied migration never changes, so a missed column or seed row goes into a new migration too. Hibernate runs with `ddl-auto=validate`, so an entity that disagrees with its table stops the app at startup.
 - Every table's primary key is `id uuid primary key default uuidv7()`, and entities map it as `@Id @UuidGenerator(style = VERSION_7) private @Nullable UUID id`. Never key or reference a row by a name or any other value a person can change.
 - Every top-level entity has `@Version private @Nullable Long version`, so a stale copy saved over a newer one fails with `ObjectOptimisticLockingFailureException`.
 - Entities have a protected no-argument constructor and guard their own invariants, such as trimming names, range-checking ratings and keeping finished pages sorted and within the page count, so no caller can break them. Change state through entity methods and let the service's transaction flush it.
