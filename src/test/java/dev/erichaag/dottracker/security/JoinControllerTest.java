@@ -57,15 +57,17 @@ class JoinControllerTest {
   }
 
   @Test
-  void theWelcomeScreenReadsWhenTheHeldInviteExpiresWithoutSigningIn() throws Exception {
+  void theWelcomeScreenReadsWhoTheHeldInviteIsForAndWhenItExpiresWithoutSigningIn() throws Exception {
     // Given
     var session = new MockHttpSession();
     session.setAttribute(JoinController.INVITE_CODE, CODE);
-    when(invites.getOpen(CODE)).thenReturn(new Invite(CODE, UUID.randomUUID(), Instant.parse("2026-10-25T17:00:00Z")));
+    when(invites.getOpen(CODE))
+      .thenReturn(new Invite(CODE, "kim@example.com", UUID.randomUUID(), Instant.parse("2026-10-25T17:00:00Z")));
 
     // When / Then
     mvc.perform(get("/api/invites/pending").session(session))
       .andExpect(status().isOk())
+      .andExpect(jsonPath("$.email").value("kim@example.com"))
       .andExpect(jsonPath("$.expiresAt").value("2026-11-08T17:00:00Z"));
   }
 

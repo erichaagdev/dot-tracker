@@ -7,6 +7,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class InviteTest {
 
@@ -23,6 +25,43 @@ class InviteTest {
 
     // Then
     assertThat(invite.getExpiresAt()).isEqualTo(Instant.parse("2026-11-08T17:00:00Z"));
+  }
+
+  @Test
+  void anInvitesEmailIsTrimmedAndInLowercase() {
+    // When
+    var invite = new Invite("code", "  Kim.Lee@Example.com ", ANA, CREATED_AT);
+
+    // Then
+    assertThat(invite.getEmail()).isEqualTo("kim.lee@example.com");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "   "})
+  void anInviteNeedsAnEmail(String email) {
+    // When / Then
+    assertThatIllegalArgumentException()
+      .isThrownBy(() -> new Invite("code", email, ANA, CREATED_AT))
+      .withMessage("Enter the email address of the friend you're inviting.");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"kim", "kim@example", "@example.com", "kim@@example.com", "kim lee@example.com", "kim@example."})
+  void anInviteRefusesSomethingThatIsNotAnEmailAddress(String email) {
+    // When / Then
+    assertThatIllegalArgumentException()
+      .isThrownBy(() -> new Invite("code", " " + email + " ", ANA, CREATED_AT))
+      .withMessage(email + " isn't an email address. Check it for a typo and try again.");
+  }
+
+  @Test
+  void anInviteIsForItsEmailHoweverItIsTyped() {
+    // Given
+    var invite = invite();
+
+    // When / Then
+    assertThat(invite.isFor(" Kim@Example.com")).isTrue();
+    assertThat(invite.isFor("kim@example.org")).isFalse();
   }
 
   @Test
@@ -74,6 +113,6 @@ class InviteTest {
   }
 
   private static Invite invite() {
-    return new Invite("code", ANA, CREATED_AT);
+    return new Invite("code", "kim@example.com", ANA, CREATED_AT);
   }
 }

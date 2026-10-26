@@ -11,6 +11,7 @@
 .welcome-card p { margin: 0; }
 .welcome-card .lead { color: var(--muted); }
 .welcome-card .fine { color: var(--muted); font-size: var(--text-md); text-align: center; }
+.welcome-card .invite-for { text-align: center; text-wrap: pretty; }
 
 .welcome-doc { gap: 14px; }
 .welcome-doc h1 { margin-top: 8px; }

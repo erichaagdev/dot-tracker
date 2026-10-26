@@ -1,6 +1,8 @@
 package dev.erichaag.dottracker.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
@@ -116,6 +118,15 @@ class SecurityConfigurationTest {
     // When / Then
     mvc.perform(get("/login/oauth2/code/google").param("code", "code").param("state", "state"))
       .andExpect(redirectedUrl("/?signin=not-invited"));
+  }
+
+  @Test
+  void signingInWithGoogleAlwaysShowsGooglesAccountChooser() throws Exception {
+    // When / Then
+    mvc.perform(get("/oauth2/authorization/google"))
+      .andExpect(status().isFound())
+      .andExpect(header().string("Location", startsWith("https://accounts.google.com/")))
+      .andExpect(header().string("Location", containsString("prompt=select_account")));
   }
 
   private Cookie xsrfToken() throws Exception {

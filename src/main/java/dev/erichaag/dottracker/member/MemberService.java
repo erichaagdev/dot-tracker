@@ -6,6 +6,9 @@ import static dev.erichaag.dottracker.member.Member.Role.MEMBER;
 import dev.erichaag.dottracker.DotTrackerProperties;
 import dev.erichaag.dottracker.invite.InviteService;
 import dev.erichaag.dottracker.member.Member.Role;
+import dev.erichaag.dottracker.member.MemberService.GoogleSignIn.NotInvited;
+import dev.erichaag.dottracker.member.MemberService.GoogleSignIn.SignedIn;
+import dev.erichaag.dottracker.member.MemberService.GoogleSignIn.WrongAccount;
 import java.time.Clock;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -81,15 +84,17 @@ public class MemberService {
   }
 
   /**
-   * Finds or adds the member for a Google account, or answers empty when the account isn't let in. A member is found
-   * by their Google account, then by a verified email, which links the account to them. Otherwise a verified email in
-   * {@code dot-tracker.admin-emails} joins as an admin, and anyone else joins with an open invite, which this uses up.
+   * Finds or adds the member for a Google account, or says why the account isn't let in. A member is found by their
+   * Google account, then by a verified email, which links the account to them. Otherwise a verified email in
+   * {@code dot-tracker.admin-emails} joins as an admin, and anyone else joins with an open invite for their verified
+   * email, which this uses up. An open invite for a different email is refused as the wrong account, so the person can
+   * try again with the right one.
    */
   @Transactional
-  public Optional<Member> signInWithGoogle(GoogleAccount account, @Nullable String inviteCode) {
+  public GoogleSignIn signInWithGoogle(GoogleAccount account, @Nullable String inviteCode) {
     var bySubject = repository.findByGoogleSubject(account.subject());
     if (bySubject.isPresent()) {
-      return bySubject;
+      return new SignedIn(bySubject.get());
     }
     var email = Member.normalizeEmail(account.email());
     var byEmail = repository.findByEmail(email);
@@ -98,22 +103,31 @@ public class MemberService {
       // An unverified email proves nothing, and a linked member already has their own Google account
       if (!account.emailVerified() || member.getGoogleSubject() != null) {
         logger.warn("Refused a Google sign-in for {}, whose email belongs to a member it can't be linked to", email);
-        return Optional.empty();
+        return new NotInvited();
       }
       member.linkGoogleAccount(account.subject());
       logger.info("Linked a Google account to {}", email);
-      return byEmail;
+      return new SignedIn(member);
     }
     if (account.emailVerified() && isAdminEmail(email)) {
-      return Optional.of(join(account, email, ADMIN));
+      return new SignedIn(join(account, email, ADMIN));
     }
-    if (inviteCode != null && invites.isOpen(inviteCode)) {
-      var member = join(account, email, MEMBER);
-      invites.accept(inviteCode, Objects.requireNonNull(member.getId()));
-      return Optional.of(member);
+    var invite = Optional.ofNullable(inviteCode).flatMap(invites::findOpen);
+    if (invite.isEmpty()) {
+      logger.info("Refused a Google sign-in for {}, who has no open invite", email);
+      return new NotInvited();
     }
-    logger.info("Refused a Google sign-in for {}, who has no open invite", email);
-    return Optional.empty();
+    if (!invite.get().isFor(email)) {
+      logger.info("Refused a Google sign-in for {} with the invite for {}", email, invite.get().getEmail());
+      return new WrongAccount();
+    }
+    if (!account.emailVerified()) {
+      logger.warn("Refused a Google sign-in for {}, whose email Google hasn't verified", email);
+      return new NotInvited();
+    }
+    var member = join(account, email, MEMBER);
+    invites.accept(invite.get().getCode(), Objects.requireNonNull(member.getId()));
+    return new SignedIn(member);
   }
 
   private boolean isAdminEmail(String email) {
@@ -133,5 +147,20 @@ public class MemberService {
    * the email stands in for it then.
    */
   public record GoogleAccount(String subject, String email, boolean emailVerified, @Nullable String name) {
+  }
+
+  /** How a Google sign-in turned out, which is the member it signed in or why it was refused. */
+  public sealed interface GoogleSignIn {
+
+    record SignedIn(Member member) implements GoogleSignIn {
+    }
+
+    /** The account isn't a member's, isn't an admin email and has no open invite. */
+    record NotInvited() implements GoogleSignIn {
+    }
+
+    /** The account comes with an open invite that was sent to a different email address. */
+    record WrongAccount() implements GoogleSignIn {
+    }
   }
 }

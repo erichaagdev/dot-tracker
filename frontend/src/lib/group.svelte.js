@@ -25,9 +25,9 @@ export async function loadGroup() {
   }
 }
 
-/** Makes a new invite, which goes to the top of the open ones, and answers with it. */
-export async function createInvite() {
-  const invite = await api.post('/api/invites')
+/** Makes a new invite for a friend's email, which goes to the top of the open ones, and answers with it. */
+export async function createInvite(email) {
+  const invite = await api.post('/api/invites', { email })
   group.invites = [invite, ...group.invites]
   return invite
 }

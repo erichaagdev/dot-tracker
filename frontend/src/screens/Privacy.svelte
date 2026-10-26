@@ -13,9 +13,10 @@
     <h2>What it keeps</h2>
     <p>When you sign in with Google, Dot Tracker gets your name, your email address and your Google account's id, and nothing else from your Google account. It never sees your contacts, mail, files or calendar, and it never posts anything for you.</p>
     <p>It also keeps what you put into it, which is the books you own and want, how far along you are and which pages you've finished, your ratings and notes, and the dates you started and finished each book. It notes when you joined, who invited you and whether you're an admin.</p>
+    <p>Before you join, it keeps the email address an admin entered when they invited you, so that only the Google account for that address can use the invite. The address stays with the invite after you join or the invite expires.</p>
 
     <h2>Who can see it</h2>
-    <p>Everyone in the group can see your name and everything about your books, including your notes and your wishlist. Admins can also see your email address, so they can tell members apart when they look after the group. Nobody outside the group can see any of it.</p>
+    <p>Everyone in the group can see your name and everything about your books, including your notes and your wishlist. Admins can also see your email address, and the address each open invite was sent to, so they can tell people apart when they look after the group. Nobody outside the group can see any of it.</p>
 
     <h2>What it never does</h2>
     <p>Dot Tracker never sells or shares your information, and it has no tracking or analytics. Your Google account is used only to sign you in and to show your name to the group.</p>

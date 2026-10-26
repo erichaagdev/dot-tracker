@@ -130,7 +130,7 @@ class MemberOidcUserServiceTest {
   void anOpenInviteAddsANewMemberAndIsUsedUp() {
     // Given
     var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
-    var invite = invites.save(new Invite("invite-code", id(ana), NOW.minus(Duration.ofDays(13))));
+    var invite = invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW.minus(Duration.ofDays(13))));
     session.setAttribute(JoinController.INVITE_CODE, "invite-code");
 
     // When
@@ -153,7 +153,7 @@ class MemberOidcUserServiceTest {
   void aNewMemberWithoutANameIsNamedAfterTheirEmail() {
     // Given
     var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
-    invites.save(new Invite("invite-code", id(ana), NOW));
+    invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW));
     session.setAttribute(JoinController.INVITE_CODE, "invite-code");
 
     // When
@@ -169,7 +169,7 @@ class MemberOidcUserServiceTest {
   void anExpiredInviteIsRefused() {
     // Given
     var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
-    invites.save(new Invite("invite-code", id(ana), NOW.minus(Duration.ofDays(14))));
+    invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW.minus(Duration.ofDays(14))));
     session.setAttribute(JoinController.INVITE_CODE, "invite-code");
 
     // When / Then
@@ -182,12 +182,63 @@ class MemberOidcUserServiceTest {
     // Given
     var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
     var bea = save("bea@example.com", "Bea", MEMBER, "google-bea");
-    invites.save(new Invite("invite-code", id(ana), NOW)).accept(id(bea), NOW);
+    invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW)).accept(id(bea), NOW);
     session.setAttribute(JoinController.INVITE_CODE, "invite-code");
 
     // When / Then
     assertRefused(signIn("google-cat", "cat@example.com", true, "Cat"));
     assertThat(members.findByEmail("cat@example.com")).isEmpty();
+  }
+
+  @Test
+  void anInviteForAnotherEmailRefusesTheWrongAccountAndStaysForTheRightOne() {
+    // Given
+    var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
+    var invite = invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW));
+    session.setAttribute(JoinController.INVITE_CODE, "invite-code");
+
+    // When / Then
+    assertRefused(signIn("google-cat-at-work", "cat@work.example.com", true, "Cat"), "wrong_account");
+    assertThat(members.findByGoogleSubject("google-cat-at-work")).isEmpty();
+    assertThat(invite.getAcceptedBy()).isNull();
+    assertThat(session.getAttribute(JoinController.INVITE_CODE)).isEqualTo("invite-code");
+
+    // When
+    service.loadUser(signIn("google-cat", "cat@example.com", true, "Cat"));
+
+    // Then
+    var cat = members.findByGoogleSubject("google-cat").orElseThrow();
+    assertThat(invite.getAcceptedBy()).isEqualTo(cat.getId());
+    assertThat(session.getAttribute(JoinController.INVITE_CODE)).isNull();
+  }
+
+  @Test
+  void anInviteIsNotUsedByAnUnverifiedEmail() {
+    // Given
+    var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
+    var invite = invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW));
+    session.setAttribute(JoinController.INVITE_CODE, "invite-code");
+
+    // When / Then
+    assertRefused(signIn("google-cat", "cat@example.com", false, "Cat"));
+    assertThat(members.findByEmail("cat@example.com")).isEmpty();
+    assertThat(invite.getAcceptedBy()).isNull();
+  }
+
+  @Test
+  void aMemberHoldingSomeoneElsesInviteSignsInAsThemselvesAndLeavesItOpen() {
+    // Given
+    var ana = save("ana@example.com", "Ana", ADMIN, "google-ana");
+    var bea = save("bea@example.com", "Bea", MEMBER, "google-bea");
+    var invite = invites.save(new Invite("invite-code", "cat@example.com", id(ana), NOW));
+    session.setAttribute(JoinController.INVITE_CODE, "invite-code");
+
+    // When
+    var user = service.loadUser(signIn("google-bea", "bea@example.com", true, "Bea"));
+
+    // Then
+    assertThat(user.getName()).isEqualTo(id(bea).toString());
+    assertThat(invite.getAcceptedBy()).isNull();
   }
 
   @Test
@@ -217,9 +268,13 @@ class MemberOidcUserServiceTest {
   }
 
   private void assertRefused(OidcUserRequest request) {
+    assertRefused(request, "not_invited");
+  }
+
+  private void assertRefused(OidcUserRequest request, String errorCode) {
     assertThatExceptionOfType(OAuth2AuthenticationException.class)
       .isThrownBy(() -> service.loadUser(request))
-      .satisfies(e -> assertThat(e.getError().getErrorCode()).isEqualTo("not_invited"));
+      .satisfies(e -> assertThat(e.getError().getErrorCode()).isEqualTo(errorCode));
   }
 
   private Member save(String email, String name, Role role, @Nullable String googleSubject) {

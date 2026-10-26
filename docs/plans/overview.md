@@ -18,7 +18,7 @@ Each book gets an overall rating from 0 to 5 for how much you liked it, and that
 
 Your shelf is the home screen. It shows the books you're working on with how far along you are, what you finished lately and how you rated it, and how much of the collection you have. The wishlist shows every book you marked as wanted and don't own yet.
 
-To join, a friend gets an invite link from you by text, taps it and signs in with their Google account. Nobody has to make up or remember a password. Everyone starts with an empty shelf. A privacy page, linked from the sign-in screen, says what the app keeps about each person and who can see it.
+To invite a friend, you type their email address and the app makes an invite link for it, which you text to them. They tap it and sign in with the Google account for that email address. The link only works with that account, so if it gets passed along, nobody else can join with it. Someone with more than one Google account gets asked which one to use, and if they pick the wrong one, the app tells them which address the invite is for so they can try again. Nobody has to make up or remember a password. Everyone starts with an empty shelf. A privacy page, linked from the sign-in screen, says what the app keeps about each person and who can see it.
 
 ## Seeing each other's books
 
@@ -29,6 +29,8 @@ People is its own tab. It lists everyone in the group, you included, with how ma
 Open any book and, below your own copy, you'll see who else in the group is working on it or has finished it, whether they own it or want it, and the group's average rating. Tap a person to see their copy of that book, with their pages, dates, ratings and notes. You can look but not change anything, since only they can change their own copy.
 
 You, and anyone you make an admin, look after the book list. When a new book comes out, a book stops being sold or a page count is wrong, you add or change it, and everyone sees the change.
+
+Admins also look after the group on its own screen. It lists every invite that hasn't been used yet, with who it's for, which admin made it and when it runs out, so you can copy the link again or cancel it. Everyone in the group is listed there too, and you can make anyone an admin or a regular member. The app asks before it changes anyone's role, since a change signs that person out until they sign in again.
 
 ## The starting book list
 

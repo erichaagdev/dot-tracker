@@ -3,7 +3,10 @@ package dev.erichaag.dottracker.invite;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
+import dev.erichaag.dottracker.invite.InviteService.OpenInvite;
 import dev.erichaag.dottracker.security.CurrentMember;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,8 +44,8 @@ public class InviteRestController {
   @PostMapping
   @ResponseStatus(CREATED)
   @PreAuthorize("hasRole('ADMIN')")
-  public InviteResponse create() {
-    return InviteResponse.from(service.create(currentMember.id()));
+  public InviteResponse create(@Valid @RequestBody InviteRequest request) {
+    return InviteResponse.from(service.create(request.email(), currentMember.id()));
   }
 
   @DeleteMapping("/{id}")
@@ -51,16 +55,25 @@ public class InviteRestController {
     service.delete(id);
   }
 
-  /** An invite with the link to send, built from the address the admin reached the app at. */
-  public record InviteResponse(UUID id, String link, Instant createdAt, Instant expiresAt) {
+  /** The friend's email address, which the service checks so a mistake comes back as a sentence to show. */
+  public record InviteRequest(@NotNull String email) {
+  }
 
-    static InviteResponse from(Invite invite) {
+  /**
+   * An invite with who it's for, who made it and the link to send, built from the address the admin reached the app
+   * at.
+   */
+  public record InviteResponse(UUID id, String email, String link, UUID createdBy, String createdByName,
+    Instant createdAt, Instant expiresAt) {
+
+    static InviteResponse from(OpenInvite open) {
+      var invite = open.invite();
       var link = ServletUriComponentsBuilder.fromCurrentContextPath()
         .path("/join/{code}")
         .buildAndExpand(invite.getCode())
         .toUriString();
-      return new InviteResponse(Objects.requireNonNull(invite.getId()), link, invite.getCreatedAt(),
-        invite.getExpiresAt());
+      return new InviteResponse(Objects.requireNonNull(invite.getId()), invite.getEmail(), link, invite.getCreatedBy(),
+        open.createdByName(), invite.getCreatedAt(), invite.getExpiresAt());
     }
   }
 }

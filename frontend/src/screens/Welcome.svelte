@@ -6,18 +6,18 @@
   import { day } from '../lib/format.js'
 
   // Where an invite link lands, before anyone has signed in. The invite waits in the session, and continuing with
-  // Google uses it.
-  let invite = $state({ status: 'checking', expiresAt: null, message: '' })
+  // Google uses it, but only with the Google account for the email the invite was sent to.
+  let invite = $state({ status: 'checking', email: '', expiresAt: null, message: '' })
 
   onMount(check)
 
   async function check() {
-    invite = { status: 'checking', expiresAt: null, message: '' }
+    invite = { status: 'checking', email: '', expiresAt: null, message: '' }
     try {
       const pending = await api.get('/api/invites/pending')
-      invite = { status: 'open', expiresAt: new Date(pending.expiresAt), message: '' }
+      invite = { status: 'open', email: pending.email, expiresAt: new Date(pending.expiresAt), message: '' }
     } catch (error) {
-      invite = { status: error.status === 404 ? 'closed' : 'problem', expiresAt: null, message: error.message }
+      invite = { status: error.status === 404 ? 'closed' : 'problem', email: '', expiresAt: null, message: error.message }
     }
   }
 </script>
@@ -29,6 +29,7 @@
     <p class="lead">Keep track of your Lifelines FlowArt books. Check off what you own, follow your pages as you go and rate what you finish.</p>
     <span class="cover lg xl line-trace" aria-hidden="true"></span>
     {#if invite.status === 'open'}
+      <p class="invite-for">This invite is for <strong>{invite.email}</strong>. Continue with the Google account for that address.</p>
       <a class="btn lg" href="/oauth2/authorization/google">Continue with Google</a>
       <p class="fine">This invite works once and expires on {day(invite.expiresAt)}.</p>
     {:else if invite.status === 'checking'}

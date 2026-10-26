@@ -1,5 +1,5 @@
-/* Account and Group, which are short lists in one card: who's signed in, the admin's links, the open invites and the
-   members with their roles. */
+/* Account and Group, which are short lists in one card: who's signed in, the admin's links, the invite form, the open
+   invites and the members with their roles. */
 .list-card { display: grid; margin: 0; padding: 0 14px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
 .list-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 0; }
 .list-row + .list-row { border-top: 1px solid var(--line); }
@@ -15,7 +15,11 @@ dl.list-card dd { flex: 1; min-width: 0; margin: 0; font-weight: 700; }
 .list-row.link:hover strong { color: var(--accent); }
 
 .invite-start { display: grid; gap: 12px; justify-items: start; }
-.invite-start p { margin: 0; color: var(--muted); font-size: var(--text-base); }
+.invite-start > p { margin: 0; color: var(--muted); font-size: var(--text-base); }
+.invite-start .field { justify-self: stretch; }
+/* The place a refusal shows stays on the page for screen readers, and takes no room until it holds one */
+.invite-start > [role=alert] { justify-self: stretch; margin-top: -12px; }
+.invite-start > [role=alert] .message-box { margin-top: 12px; }
 
 .list-row.invite { flex-wrap: wrap; }
 .list-row.invite .txt { flex-basis: 100%; }
@@ -32,6 +36,13 @@ dl.list-card dd { flex: 1; min-width: 0; margin: 0; font-weight: 700; }
 .list-row.member .seg { flex: 1 1 100%; }
 .you { margin-left: 8px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--accent-soft); color: var(--accent); font-size: var(--text-xs); font-weight: 700; vertical-align: 2px; }
 .list-row .hint { flex-basis: 100%; color: var(--muted); font-size: var(--text-sm); }
+
+/* Asking before someone's role changes, in their row, with a button that names the change and one that leaves it */
+.role-confirm { flex-basis: 100%; display: grid; gap: 12px; padding: 12px; border: 1px solid var(--accent); border-radius: var(--r-md); background: var(--accent-soft); }
+.role-confirm p { margin: 0; color: var(--ink); font-size: var(--text-base); }
+.role-confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.role-confirm .btn { min-height: var(--touch); padding: 0 14px; }
+.role-confirm .btn.ghost { background: var(--surface); }
 
 @media (min-width: 900px) {
   .list-row.member .seg { flex: 0 0 196px; margin-left: auto; }

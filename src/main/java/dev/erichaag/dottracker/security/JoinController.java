@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 
 /**
  * Starts sign-in from an invite link. An open invite's code waits in the session for {@link MemberOidcUserService},
- * and the person lands on the frontend's welcome screen, which reads when the invite expires and links on to Google.
- * Any other code sends them to the sign-in screen's message about an expired invite.
+ * and the person lands on the frontend's welcome screen, which reads who the invite is for and when it expires and
+ * links on to Google. Any other code sends them to the sign-in screen's message about an expired invite.
  */
 @Controller
 public class JoinController {
@@ -43,10 +43,11 @@ public class JoinController {
     return PendingInviteResponse.from(invites.getOpen(code));
   }
 
-  public record PendingInviteResponse(Instant expiresAt) {
+  /** The invite's email address, so the welcome screen can say which Google account to continue with. */
+  public record PendingInviteResponse(String email, Instant expiresAt) {
 
     static PendingInviteResponse from(Invite invite) {
-      return new PendingInviteResponse(invite.getExpiresAt());
+      return new PendingInviteResponse(invite.getEmail(), invite.getExpiresAt());
     }
   }
 }

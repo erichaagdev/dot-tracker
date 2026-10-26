@@ -15,6 +15,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
@@ -30,12 +33,21 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 @EnableMethodSecurity
 public class SecurityConfiguration {
 
-  /** Google sign-in. {@code oauth2Login} finds {@link MemberOidcUserService} as the context's OIDC user service. */
+  /**
+   * Google sign-in. {@code oauth2Login} finds {@link MemberOidcUserService} as the context's OIDC user service. Google
+   * always shows its account chooser, so someone with more than one Google account picks the one their invite is for.
+   */
   @Bean
   @Profile("!demo")
-  public SecurityFilterChain googleSignIn(HttpSecurity http) {
+  public SecurityFilterChain googleSignIn(HttpSecurity http, ClientRegistrationRepository registrations) {
+    var authorizationRequests = new DefaultOAuth2AuthorizationRequestResolver(registrations,
+      OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+    authorizationRequests.setAuthorizationRequestCustomizer(request -> request
+      .additionalParameters(parameters -> parameters.put("prompt", "select_account")));
     return configureCommon(http)
-      .oauth2Login(login -> login.failureUrl("/?signin=not-invited"))
+      .oauth2Login(login -> login
+        .authorizationEndpoint(endpoint -> endpoint.authorizationRequestResolver(authorizationRequests))
+        .failureHandler(new GoogleSignInFailureHandler()))
       .build();
   }
 

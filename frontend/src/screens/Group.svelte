@@ -1,11 +1,12 @@
 <script>
   import Check from '@lucide/svelte/icons/check'
   import ChevronLeft from '@lucide/svelte/icons/chevron-left'
+  import CircleAlert from '@lucide/svelte/icons/circle-alert'
   import Copy from '@lucide/svelte/icons/copy'
   import Share from '@lucide/svelte/icons/share'
   import UserPlus from '@lucide/svelte/icons/user-plus'
   import X from '@lucide/svelte/icons/x'
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import Loading from '../components/Loading.svelte'
   import { day } from '../lib/format.js'
   import { changeRole, createInvite, group, loadGroup, revokeInvite } from '../lib/group.svelte.js'
@@ -21,23 +22,34 @@
   const copiedFor = 2000
   const canShare = typeof navigator.share === 'function'
 
+  let email = $state('')
   let creating = $state(false)
+  let inviteProblem = $state('')
   let freshId = $state(null)
   let copiedId = $state(null)
   let copiedTimer
+  // The role change waiting for a yes, as the member's id and the role they'd get
+  let asking = $state(null)
 
   onMount(() => {
     loadGroup()
     return () => clearTimeout(copiedTimer)
   })
 
-  async function invite() {
+  async function invite(event) {
+    event.preventDefault()
+    if (!email.trim()) {
+      inviteProblem = "Enter your friend's email address."
+      return
+    }
+    inviteProblem = ''
     creating = true
     try {
-      freshId = (await createInvite()).id
+      freshId = (await createInvite(email)).id
+      email = ''
     } catch (error) {
       if (error.status !== 401) {
-        showNotice(error.message)
+        inviteProblem = error.message
       }
     } finally {
       creating = false
@@ -68,6 +80,49 @@
       }
     }
   }
+
+  async function askToChange(member, role) {
+    if (member.role === role) {
+      asking = null
+      return
+    }
+    asking = { id: member.id, role }
+    await tick()
+    document.getElementById(`confirm-role-${member.id}`)?.focus()
+  }
+
+  function confirmRole() {
+    const member = group.members.find((each) => each.id === asking.id)
+    const role = asking.role
+    asking = null
+    if (member && member.role !== role) {
+      changeRole(member, role)
+    }
+  }
+
+  /** What changing someone's role does, said before it happens, with the words for the button that does it. */
+  function roleQuestion(member, role) {
+    const name = member.displayName
+    if (role === 'ADMIN') {
+      return {
+        question: `Make ${name} an admin?`,
+        detail: `Admins can add and edit books and invite friends. ${name} will be signed out and will be an admin after signing in again.`,
+        action: `Make ${name} an admin`,
+      }
+    }
+    if (member.id === me.member?.id) {
+      return {
+        question: 'Make yourself a member?',
+        detail: "You won't be able to add or edit books or invite friends anymore, and you'll be signed out right away.",
+        action: 'Make me a member',
+      }
+    }
+    return {
+      question: `Make ${name} a member?`,
+      detail: `${name} won't be able to add or edit books or invite friends anymore, and will be signed out right away.`,
+      action: `Make ${name} a member`,
+    }
+  }
 </script>
 
 <div class="app-top">
@@ -89,19 +144,29 @@
 
     <section class="block" aria-labelledby="invites-heading">
       <h2 class="section-title" id="invites-heading">Invites</h2>
-      <div class="card invite-start">
-        <p>An invite link lets one friend join. It works once and expires after 14 days.</p>
-        <button type="button" class="btn" onclick={invite} disabled={creating}>
+      <form class="card invite-start" onsubmit={invite} novalidate>
+        <p>An invite link lets one friend join with the Google account for their email address. It works once and expires after 14 days.</p>
+        <div class="field">
+          <label class="field-label" for="invite-email">Your friend's email</label>
+          <input class="input" id="invite-email" type="email" inputmode="email" autocomplete="off" autocapitalize="off"
+            spellcheck="false" bind:value={email} />
+        </div>
+        <div role="alert">
+          {#if inviteProblem}
+            <div class="message-box"><CircleAlert class="ic" aria-hidden="true" /><p>{inviteProblem}</p></div>
+          {/if}
+        </div>
+        <button type="submit" class="btn" disabled={creating}>
           <UserPlus class="ic" aria-hidden="true" />{creating ? 'Making a link…' : 'Invite a friend'}
         </button>
-      </div>
+      </form>
       {#if group.invites.length > 0}
         <ul class="list-card">
           {#each group.invites as each (each.id)}
             <li class="list-row invite" class:fresh={each.id === freshId}>
               <span class="txt">
-                <strong>{each.id === freshId ? 'Your new link, ready to send' : 'Open invite'}</strong>
-                <small>Made {day(new Date(each.createdAt))}, expires {day(new Date(each.expiresAt))}</small>
+                <strong>{each.id === freshId ? `Your new link for ${each.email}, ready to send` : `For ${each.email}`}</strong>
+                <small>Made by {each.createdBy === me.member?.id ? 'you' : each.createdByName} on {day(new Date(each.createdAt))}, expires {day(new Date(each.expiresAt))}</small>
               </span>
               <span class="invite-link">{each.link}</span>
               <span class="row-actions">
@@ -140,10 +205,20 @@
             <span class="seg" role="group" aria-label="{member.displayName}'s role">
               {#each roles as role (role.value)}
                 <button type="button" class:on={member.role === role.value} aria-pressed={member.role === role.value}
-                  onclick={() => member.role !== role.value && changeRole(member, role.value)}>{role.label}</button>
+                  onclick={() => askToChange(member, role.value)}>{role.label}</button>
               {/each}
             </span>
             {#if you}<small class="hint">Changing your own role signs you out.</small>{/if}
+            {#if asking?.id === member.id}
+              {@const ask = roleQuestion(member, asking.role)}
+              <div class="role-confirm">
+                <p><strong>{ask.question}</strong> {ask.detail}</p>
+                <div class="role-confirm-actions">
+                  <button type="button" class="btn" id="confirm-role-{member.id}" onclick={confirmRole}>{ask.action}</button>
+                  <button type="button" class="btn ghost" onclick={() => (asking = null)}>Cancel</button>
+                </div>
+              </div>
+            {/if}
           </li>
         {/each}
       </ul>
