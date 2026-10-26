@@ -33,9 +33,11 @@
     </nav>
     <span class="end">
       {#if isAdmin()}
-        <a class="nav" class:on={on(['new-book'])} href="/books/new"><Plus class="ic" aria-hidden="true" />Add a book</a>
-        <a class="nav" class:on={on(['group'])} href="/group"><Users class="ic" aria-hidden="true" />Group</a>
-        <span class="sep"></span>
+        <span class="admin-nav">
+          <a class="nav" class:on={on(['new-book'])} href="/books/new"><Plus class="ic" aria-hidden="true" />Add a book</a>
+          <a class="nav" class:on={on(['group'])} href="/group"><Users class="ic" aria-hidden="true" />Group</a>
+          <span class="sep"></span>
+        </span>
       {/if}
       <a class="nav" class:on={on(['account'])} href="/account" aria-current={on(['account']) ? 'page' : undefined}>
         <span class="avatar" aria-hidden="true">{initials()}</span>Account

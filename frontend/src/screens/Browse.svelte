@@ -109,7 +109,7 @@
         {@render nothingMatches()}
       {:else}
         <div class="table">
-          <div class="trow head" aria-hidden="true"><span></span><span>Book</span><span>Status</span><span>Own</span></div>
+          <div class="trow head" aria-hidden="true"><span></span><span>Book</span><span class="st">Status</span><span>Own</span></div>
           {#each groups as group (group.line.id)}
             {#if !line}
               <h2 class="trow group-row {lineClass(group.line)}"><i aria-hidden="true"></i>{group.line.name}</h2>

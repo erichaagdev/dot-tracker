@@ -11,8 +11,8 @@
 .own-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 
 .choice { display: grid; gap: 8px; }
-.choice-label { margin: 0; font-size: var(--text-base); font-weight: 700; }
-.choice .line-h small { color: var(--muted); font-size: var(--text-sm); }
+.choice-label { flex: none; margin: 0; font-size: var(--text-base); font-weight: 700; }
+.choice .line-h small { color: var(--muted); font-size: var(--text-sm); text-align: right; }
 
 .pages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
 .page {

@@ -64,7 +64,7 @@
   .fopt.on { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--accent); font-weight: 700; }
   .fopt.more { color: var(--muted); }
 
-  .listing { display: flex; flex-direction: column; gap: 12px; padding: 18px 22px; overflow-y: auto; }
+  .listing { display: flex; flex-direction: column; gap: 12px; padding: 18px 22px; overflow-y: auto; container: listing / inline-size; }
   .listing-h { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
   .listing-h h1 { margin: 0; font: 800 var(--title-md)/1.1 var(--font-display); letter-spacing: -0.02em; }
   .listing-h .subtle { margin-top: 4px; }
@@ -93,6 +93,18 @@
   .trow .txt small { color: var(--muted); font-size: var(--text-sm); }
   .trow .st { display: grid; gap: 3px; justify-items: start; }
   .trow .own { z-index: 1; min-height: 34px; padding: 0 8px; }
+
+  /* Where the list column is narrow, as beside an open book, each row's status folds under the book's name so the name
+     keeps the room */
+  @container listing (width < 560px) {
+    .trow { grid-template-columns: 40px minmax(0, 1fr) 74px; grid-template-areas: "cover txt own" "cover st own"; row-gap: 4px; }
+    .trow > .cover { grid-area: cover; }
+    .trow > .txt { grid-area: txt; }
+    .trow > .st { grid-area: st; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+    .trow > .own { grid-area: own; }
+    .trow.head { grid-template-areas: none; }
+    .trow.head .st { display: none; }
+  }
 
   .detail { display: flex; flex-direction: column; gap: 16px; padding: 20px 22px 28px; background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; }
   .detail-h { display: flex; justify-content: flex-end; gap: 4px; margin: -10px -12px -4px 0; }
