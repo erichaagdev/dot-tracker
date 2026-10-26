@@ -9,6 +9,7 @@
   import Pill from '../components/Pill.svelte'
   import { isAdmin, me, signOut } from '../lib/me.svelte.js'
   import { showNotice } from '../lib/notice.svelte.js'
+  import { setTheme, theme, themes } from '../lib/theme.svelte.js'
 
   // Who's signed in, and for an admin the screens a phone has no top bar to reach
   const role = $derived(isAdmin()
@@ -56,6 +57,17 @@
       </div>
     </section>
   {/if}
+
+  <section class="block" aria-labelledby="theme-heading">
+    <h2 class="section-title" id="theme-heading">Theme</h2>
+    <div class="seg theme-choice" role="group" aria-labelledby="theme-heading">
+      {#each themes as option (option.value)}
+        <button type="button" class:on={theme.choice === option.value} aria-pressed={theme.choice === option.value}
+          onclick={() => setTheme(option.value)}>{option.label}</button>
+      {/each}
+    </div>
+    <p class="subtle">Device follows the light or dark setting on your phone or computer. Your choice applies to this device only.</p>
+  </section>
 
   <p class="subtle"><a href="/privacy">Privacy</a> says what Dot Tracker keeps about you and who can see it.</p>
 

@@ -62,7 +62,7 @@
 .note:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
 .note-hint { display: flex; align-items: center; gap: 6px; margin: -4px 0 0; color: var(--muted); font-size: var(--text-sm); }
 
-/* For admins, beside the back button on a phone and at the top of the desktop detail column */
+/* For admins, beside the back button on a phone and beside Close at the top of the desktop detail column */
 .edit-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; text-decoration: none; }
 .app-top .edit-link { padding: 0 2px 0 10px; }
 
@@ -73,7 +73,6 @@
   /* Only someone else's copy of a book opens as its own screen at this width */
   .book-screen { max-width: var(--content-width); margin: 0 auto; padding: 32px var(--gutter) 48px; }
 
-  .detail .edit-link { align-self: flex-end; min-height: 32px; margin: -8px 0 -6px; font-size: var(--text-md); }
   .detail .book-head .cover { height: 92px; }
   .detail .book-head h1 { font-size: var(--title-md); }
   .detail .section-title, .detail .choice-label { font: 700 var(--text-xs)/1.2 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }

@@ -1,5 +1,5 @@
-// Per-device memory, such as Browse's search and filters. Storage can be blocked or full, as in some private windows,
-// and then reading gives the fallback and saving does nothing, so the app works the same without it.
+// Per-device memory, such as Browse's search and filters and the theme. Storage can be blocked or full, as in some
+// private windows, and then reading gives the fallback and saving does nothing, so the app works the same without it.
 
 const prefix = 'dot-tracker.'
 

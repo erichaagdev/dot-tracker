@@ -1,5 +1,6 @@
 /* Browse: one list of every book grouped by product line. On a phone it's search, chips and rows. From 900 px it's
-   the filter column, the list table and the selected book's detail side by side, each scrolling on its own. */
+   the filter column and the list table side by side, with an open book's detail in a third column, each scrolling on
+   its own. */
 .browse { display: flex; flex-direction: column; gap: 12px; padding: 6px var(--gutter) 28px; }
 .selects { display: flex; gap: 8px; }
 .results { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: var(--text-md); color: var(--muted); }
@@ -33,10 +34,11 @@
 @media (min-width: 900px) {
   .desk {
     display: grid;
-    grid-template-columns: var(--filters-width) minmax(0, 1fr) var(--detail-width);
+    grid-template-columns: var(--filters-width) minmax(0, 1fr);
     height: calc(100dvh - var(--topbar-height));
     font-size: var(--text-base);
   }
+  .desk:has(> .detail) { grid-template-columns: var(--filters-width) minmax(0, 1fr) var(--detail-width); }
 
   .filters { display: flex; flex-direction: column; gap: 18px; padding: 18px 16px; border-right: 1px solid var(--line); overflow-y: auto; }
   .filters .search { min-height: 40px; }
@@ -67,7 +69,9 @@
   .listing-h h1 { margin: 0; font: 800 var(--title-md)/1.1 var(--font-display); letter-spacing: -0.02em; }
   .listing-h .subtle { margin-top: 4px; }
 
-  .table { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  /* The rounded corners need overflow hidden, which would let the table shrink to the column and clip its own rows, so
+     it keeps its full height and the column scrolls instead */
+  .table { flex: none; display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
   .trow {
     position: relative;
     display: grid;
@@ -91,6 +95,10 @@
   .trow .own { z-index: 1; min-height: 34px; padding: 0 8px; }
 
   .detail { display: flex; flex-direction: column; gap: 16px; padding: 20px 22px 28px; background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; }
-  .detail-empty { display: grid; gap: 12px; align-content: center; justify-items: center; height: 100%; color: var(--muted); text-align: center; }
-  .detail-empty p { margin: 0; max-width: 28ch; }
+  .detail-h { display: flex; justify-content: flex-end; gap: 4px; margin: -10px -12px -4px 0; }
+  .detail-h .edit-link, .detail-close { min-height: 36px; padding: 0 10px; border-radius: var(--r-sm); font-size: var(--text-md); }
+  .detail-close { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--ink); font-weight: 700; }
+  .detail-h .edit-link:hover, .detail-close:hover { background: var(--surface-2); }
+  .detail-missing { flex: 1; display: grid; align-content: center; justify-items: center; color: var(--muted); text-align: center; }
+  .detail-missing p { margin: 0; max-width: 28ch; }
 }

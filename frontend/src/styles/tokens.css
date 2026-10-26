@@ -23,6 +23,7 @@
   --on-danger: #FFFFFF;
   --bezel: #1A1C26;
   --shadow: rgb(20 22 40 / .45);
+  color-scheme: light;
 
   /* Product line cover colors, one per family a line's color names. Related lines share one, so every Trace line is
      teal. */

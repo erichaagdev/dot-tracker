@@ -1,6 +1,7 @@
 <script>
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import Pencil from '@lucide/svelte/icons/pencil'
+  import X from '@lucide/svelte/icons/x'
   import AppTop from '../components/AppTop.svelte'
   import BookDetail from '../components/BookDetail.svelte'
   import BookRow from '../components/BookRow.svelte'
@@ -11,9 +12,11 @@
   import { entryFor } from '../lib/collection.svelte.js'
   import { lineClass } from '../lib/format.js'
   import { isAdmin } from '../lib/me.svelte.js'
+  import { navigate } from '../lib/router.svelte.js'
   import { viewport } from '../lib/viewport.svelte.js'
 
-  // Every book in one list. From 900 px the selected book, from /books/<id>, shows in the detail column.
+  // Every book in one list. From 900 px the book at /books/<id> opens in a detail column beside the list, and closing
+  // it goes back to /browse.
   let { selectedId = undefined } = $props()
 
   const linesShownAtFirst = 5
@@ -39,7 +42,23 @@
   function books(count) {
     return count === 1 ? '1 book' : `${count} books`
   }
+
+  // Focus goes to the book's row, so the keyboard carries on from where the book was opened
+  function close() {
+    const row = selected && document.querySelector(`.trow a[href="/books/${selected.id}"]`)
+    navigate('/browse')
+    row?.focus({ preventScroll: true })
+  }
+
+  // Escape closes the book too, unless it's meant for a field being typed in
+  function closeOnEscape(event) {
+    if (event.key === 'Escape' && selectedId && !event.defaultPrevented && !event.target.closest?.('input, textarea, select')) {
+      close()
+    }
+  }
 </script>
+
+<svelte:window onkeydown={closeOnEscape} />
 
 {#snippet nothingMatches()}
   <div class="empty">
@@ -103,18 +122,23 @@
       {/if}
     </section>
 
-    <aside class="detail" aria-label="The book you picked">
-      {#if selected}
-        {#if isAdmin()}
-          <a class="edit-link" href="/books/{selected.id}/edit"><Pencil class="ic" aria-hidden="true" />Edit book</a>
-        {/if}
-        {#key selected.id}<BookDetail book={selected} />{/key}
-      {:else}
-        <div class="detail-empty">
-          <p>{selectedId ? "We couldn't find that book. It may have been taken off the list." : 'Pick a book from the list to see its pages, ratings and notes here.'}</p>
+    {#if selectedId}
+      <aside class="detail" aria-label="The book you opened">
+        <div class="detail-h">
+          {#if selected && isAdmin()}
+            <a class="edit-link" href="/books/{selected.id}/edit"><Pencil class="ic" aria-hidden="true" />Edit book</a>
+          {/if}
+          <button type="button" class="detail-close" onclick={close}><X class="ic" aria-hidden="true" />Close</button>
         </div>
-      {/if}
-    </aside>
+        {#if selected}
+          {#key selected.id}<BookDetail book={selected} />{/key}
+        {:else}
+          <div class="detail-missing">
+            <p>We couldn't find that book. It may have been taken off the list.</p>
+          </div>
+        {/if}
+      </aside>
+    {/if}
   </div>
 {:else}
   <AppTop />

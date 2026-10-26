@@ -67,7 +67,7 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 - All backend calls go through `src/lib/api.js`. Shared state lives in `src/lib/*.svelte.js` stores, and components call store functions instead of assigning to store objects.
 - Styling is plain global CSS in `src/styles/`, where each partial owns its class prefixes and every color, size and font comes from `tokens.css`, which defines both the light and the dark theme. No `<style>` blocks.
 - Below 900 px wide the app is one column with a bottom tab bar, and from 900 px a top bar replaces it. Check every screen at 375 px and at desktop width, and never let a page scroll sideways.
-- Every control has a visible text label, touch targets are at least 44 px, and every status is an icon, a word and a color. Icons are per-icon imports with `aria-hidden="true"`.
+- Every control has a visible text label, touch targets are at least 44 px, and every status is an icon, a word and a color. The member's initials at the top right of a phone screen are the one control without a word, a link to Account named "Your account" for screen readers. Icons are per-icon imports with `aria-hidden="true"`.
 - A change applies on screen at once and then sends its request, and a refused request puts things back and shows why. Nothing asks "are you sure" except deleting.
 - Browser storage goes through `src/lib/storage.js`, which tolerates storage being blocked.
 

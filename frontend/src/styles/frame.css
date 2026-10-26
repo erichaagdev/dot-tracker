@@ -1,5 +1,6 @@
-/* The frame around every signed-in screen: the phone's top row and bottom tab bar, the desktop top bar, the message
-   that pops up after a refused change, and the plain screens for loading and short messages. */
+/* The frame around every signed-in screen: the phone's top row with the member's initials that open Account and its
+   bottom tab bar, the desktop top bar, the message that pops up after a refused change, and the plain screens for
+   loading and short messages. */
 .app { min-height: 100dvh; display: flex; flex-direction: column; }
 .main { flex: 1; min-width: 0; padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px)); }
 
@@ -39,6 +40,10 @@
   color: var(--accent);
   font: 700 var(--text-sm) var(--font-body);
 }
+
+/* The one control without a word on it, a full touch target around the initials with a round focus ring */
+.account-link { display: grid; place-items: center; width: var(--touch); height: var(--touch); margin: -5px; border-radius: 50%; text-decoration: none; }
+.account-link[aria-current] .avatar { background: var(--accent); color: var(--on-accent); }
 
 .back {
   display: inline-flex;

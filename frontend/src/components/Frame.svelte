@@ -4,7 +4,6 @@
   import Heart from '@lucide/svelte/icons/heart'
   import Plus from '@lucide/svelte/icons/plus'
   import Search from '@lucide/svelte/icons/search'
-  import User from '@lucide/svelte/icons/user'
   import Users from '@lucide/svelte/icons/users'
   import Brand from './Brand.svelte'
   import { initials, isAdmin } from '../lib/me.svelte.js'
@@ -48,9 +47,8 @@
     {@render children()}
   </main>
 
-  <!-- A phone reaches Group from Account, so the Account tab stays lit there -->
   <nav class="tabbar" aria-label="Main">
-    {#each [...tabs, { href: '/account', label: 'Account', icon: User, routes: ['account', 'group'] }] as tab (tab.href)}
+    {#each tabs as tab (tab.href)}
       <a class="tab" class:on={on(tab.routes)} href={tab.href} aria-current={on(tab.routes) ? 'page' : undefined}>
         <tab.icon class="ic" aria-hidden="true" />{tab.label}
       </a>
