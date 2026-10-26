@@ -23,11 +23,12 @@
   text-decoration: none;
 }
 .brand.lg { font-size: var(--title-sm); }
-.brand-dots { display: inline-grid; grid-template-columns: repeat(3, 9px); gap: 2px; }
-.brand-dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
-.brand-dots i:nth-child(1) { background: var(--l-dbl); }
-.brand-dots i:nth-child(2) { background: var(--l-mini); }
-.brand-dots i:nth-child(3) { background: var(--l-trace); }
+.brand-mark { width: 24px; height: 24px; flex: none; }
+.brand.lg .brand-mark { width: 30px; height: 30px; }
+.brand-mark .page { fill: var(--brand-page); stroke: var(--brand-edge); stroke-width: 1.4; }
+.brand-mark circle { fill: var(--c); }
+.brand-mark .todo { fill: var(--brand-todo); }
+.brand-mark .coil { fill: var(--brand-coil); }
 
 .avatar {
   width: 34px;

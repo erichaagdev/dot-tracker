@@ -114,11 +114,9 @@ button { cursor: pointer; }
 
 .app-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 18px 6px; }
 .brand { display: flex; align-items: center; gap: 8px; font: 800 17px var(--font-display); letter-spacing: -0.01em; }
-.brand-dots { display: inline-grid; grid-template-columns: repeat(3, 9px); gap: 2px; }
-.brand-dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
-.brand-dots i:nth-child(1) { background: var(--l-dbl); }
-.brand-dots i:nth-child(2) { background: var(--l-mini); }
-.brand-dots i:nth-child(3) { background: var(--l-trace); }
+.brand-mark { width: 24px; height: 24px; flex: none; }
+.brand-mark .page { fill: #FFFFFF; stroke: var(--ink); stroke-width: 1.4; }
+.brand-mark .coil { fill: var(--ink); }
 .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 13px var(--font-body); }
 .back { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 8px 0 2px; border: 0; background: none; color: var(--accent); font-weight: 700; }
 
@@ -326,7 +324,7 @@ button { cursor: pointer; }
         <div class="device"><div class="screen">
           <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
           <div class="app-top">
-            <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <span class="brand"><svg class="brand-mark" viewBox="0 0 32 32"><rect class="page" x="5" y="6.4" width="22" height="23.6" rx="2.6"/><circle cx="10" cy="13.4" r="2.3" fill="#E2552B"/><circle cx="16" cy="13.4" r="2.3" fill="#E09A12"/><circle cx="22" cy="13.4" r="2.3" fill="#6E9A1E"/><circle cx="10" cy="19.4" r="2.3" fill="#1F9A9A"/><circle cx="16" cy="19.4" r="2.3" fill="#2F6FD0"/><circle cx="22" cy="19.4" r="2.3" fill="#D9488F"/><circle cx="10" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="16" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="22" cy="25.4" r="2.3" fill="#D6DAE5"/><rect class="coil" x="7.55" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="10.59" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="13.63" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="16.67" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="19.71" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="22.75" y="3" width="1.7" height="6.4" rx="0.85"/></svg>Dot Tracker</span>
             <span class="avatar">JR</span>
           </div>
           <div class="app-body">
@@ -379,7 +377,7 @@ button { cursor: pointer; }
         <div class="device"><div class="screen">
           <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
           <div class="app-top">
-            <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <span class="brand"><svg class="brand-mark" viewBox="0 0 32 32"><rect class="page" x="5" y="6.4" width="22" height="23.6" rx="2.6"/><circle cx="10" cy="13.4" r="2.3" fill="#E2552B"/><circle cx="16" cy="13.4" r="2.3" fill="#E09A12"/><circle cx="22" cy="13.4" r="2.3" fill="#6E9A1E"/><circle cx="10" cy="19.4" r="2.3" fill="#1F9A9A"/><circle cx="16" cy="19.4" r="2.3" fill="#2F6FD0"/><circle cx="22" cy="19.4" r="2.3" fill="#D9488F"/><circle cx="10" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="16" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="22" cy="25.4" r="2.3" fill="#D6DAE5"/><rect class="coil" x="7.55" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="10.59" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="13.63" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="16.67" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="19.71" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="22.75" y="3" width="1.7" height="6.4" rx="0.85"/></svg>Dot Tracker</span>
             <span class="avatar">JR</span>
           </div>
           <div class="app-body" style="gap:12px">
@@ -512,7 +510,7 @@ button { cursor: pointer; }
         <div class="device"><div class="screen">
           <div class="statusbar"><span>9:41</span><span class="notch"></span><span class="bat"></span></div>
           <div class="app-body" style="justify-content:center;gap:22px;padding:24px 26px 40px">
-            <span class="brand" style="font-size:22px"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+            <span class="brand" style="font-size:22px"><svg class="brand-mark" viewBox="0 0 32 32"><rect class="page" x="5" y="6.4" width="22" height="23.6" rx="2.6"/><circle cx="10" cy="13.4" r="2.3" fill="#E2552B"/><circle cx="16" cy="13.4" r="2.3" fill="#E09A12"/><circle cx="22" cy="13.4" r="2.3" fill="#6E9A1E"/><circle cx="10" cy="19.4" r="2.3" fill="#1F9A9A"/><circle cx="16" cy="19.4" r="2.3" fill="#2F6FD0"/><circle cx="22" cy="19.4" r="2.3" fill="#D9488F"/><circle cx="10" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="16" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="22" cy="25.4" r="2.3" fill="#D6DAE5"/><rect class="coil" x="7.55" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="10.59" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="13.63" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="16.67" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="19.71" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="22.75" y="3" width="1.7" height="6.4" rx="0.85"/></svg>Dot Tracker</span>
             <h1 style="font-size:32px">You're invited to Dot Tracker</h1>
             <p style="margin:0;color:var(--muted)">Keep track of your Lifelines FlowArt books. Check off what you own, follow your pages as you go and rate what you finish.</p>
             <span class="cover lg" style="height:150px;--c:var(--l-trace)"></span>
@@ -536,7 +534,7 @@ button { cursor: pointer; }
       <div class="window">
         <div class="titlebar"><i></i><i></i><i></i><span>Dot Tracker</span></div>
         <header class="topnav">
-          <span class="brand"><span class="brand-dots"><i></i><i></i><i></i></span>Dot Tracker</span>
+          <span class="brand"><svg class="brand-mark" viewBox="0 0 32 32"><rect class="page" x="5" y="6.4" width="22" height="23.6" rx="2.6"/><circle cx="10" cy="13.4" r="2.3" fill="#E2552B"/><circle cx="16" cy="13.4" r="2.3" fill="#E09A12"/><circle cx="22" cy="13.4" r="2.3" fill="#6E9A1E"/><circle cx="10" cy="19.4" r="2.3" fill="#1F9A9A"/><circle cx="16" cy="19.4" r="2.3" fill="#2F6FD0"/><circle cx="22" cy="19.4" r="2.3" fill="#D9488F"/><circle cx="10" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="16" cy="25.4" r="2.3" fill="#D6DAE5"/><circle cx="22" cy="25.4" r="2.3" fill="#D6DAE5"/><rect class="coil" x="7.55" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="10.59" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="13.63" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="16.67" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="19.71" y="3" width="1.7" height="6.4" rx="0.85"/><rect class="coil" x="22.75" y="3" width="1.7" height="6.4" rx="0.85"/></svg>Dot Tracker</span>
           <button type="button" class="nav"><svg class="ic"><use href="#i-shelf"/></svg>Shelf</button>
           <button type="button" class="nav on"><svg class="ic"><use href="#i-search"/></svg>Browse</button>
           <button type="button" class="nav"><svg class="ic"><use href="#i-heart"/></svg>Wishlist</button>
