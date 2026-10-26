@@ -17,6 +17,7 @@ const routes = [
   { name: 'account', pattern: /^\/account$/ },
   { name: 'group', pattern: /^\/group$/ },
   { name: 'welcome', pattern: /^\/welcome$/ },
+  { name: 'privacy', pattern: /^\/privacy$/ },
 ]
 
 const serverPaths = /^\/(api|oauth2|login|logout|join|actuator)(\/|$)/

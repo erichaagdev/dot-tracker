@@ -41,5 +41,6 @@
         <a class="btn ghost" href="/">Already in the group? Sign in</a>
       {/if}
     {/if}
+    <p class="fine"><a href="/privacy">Privacy</a></p>
   </div>
 </div>

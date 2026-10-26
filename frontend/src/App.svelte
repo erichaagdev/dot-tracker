@@ -13,6 +13,7 @@
   import People from './screens/People.svelte'
   import Person from './screens/Person.svelte'
   import PersonBook from './screens/PersonBook.svelte'
+  import Privacy from './screens/Privacy.svelte'
   import Shelf from './screens/Shelf.svelte'
   import SignIn from './screens/SignIn.svelte'
   import Welcome from './screens/Welcome.svelte'
@@ -23,9 +24,10 @@
   import { followLink, route } from './lib/router.svelte.js'
   import { viewport } from './lib/viewport.svelte.js'
 
-  // The welcome screen is for someone who hasn't signed in yet, so it never asks who's signed in
+  // The welcome screen is for someone who hasn't signed in yet and the privacy page is for anyone, so neither asks
+  // who's signed in
   $effect(() => {
-    if (route.name !== 'welcome' && me.status === 'idle') {
+    if (route.name !== 'welcome' && route.name !== 'privacy' && me.status === 'idle') {
       untrack(loadMe)
     }
   })
@@ -46,7 +48,9 @@
 
 <svelte:document onclick={followLink} />
 
-{#if route.name === 'welcome' && me.status !== 'signed-in'}
+{#if route.name === 'privacy'}
+  <Privacy />
+{:else if route.name === 'welcome' && me.status !== 'signed-in'}
   <Welcome />
 {:else if me.status === 'signed-out'}
   <SignIn />

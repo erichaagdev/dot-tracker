@@ -57,6 +57,8 @@
     </section>
   {/if}
 
+  <p class="subtle"><a href="/privacy">Privacy</a> says what Dot Tracker keeps about you and who can see it.</p>
+
   <div>
     <button type="button" class="btn ghost" onclick={signOutNow}><LogOut class="ic" aria-hidden="true" />Sign out</button>
   </div>

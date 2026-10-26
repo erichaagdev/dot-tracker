@@ -25,5 +25,6 @@
     <span class="cover lg xl line-trace" aria-hidden="true"></span>
     <a class="btn lg" href="/oauth2/authorization/google">Continue with Google</a>
     <p class="fine">Dot Tracker is for a small group of friends. To join, ask someone in the group for an invite link.</p>
+    <p class="fine"><a href="/privacy">Privacy</a></p>
   </div>
 </div>

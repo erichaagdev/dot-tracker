@@ -18,7 +18,7 @@ Each book gets an overall rating from 0 to 5 for how much you liked it, and that
 
 Your shelf is the home screen. It shows the books you're working on with how far along you are, what you finished lately and how you rated it, and how much of the collection you have. The wishlist shows every book you marked as wanted and don't own yet.
 
-To join, a friend gets an invite link from you by text, taps it and signs in with their Google account. Nobody has to make up or remember a password. Everyone starts with an empty shelf.
+To join, a friend gets an invite link from you by text, taps it and signs in with their Google account. Nobody has to make up or remember a password. Everyone starts with an empty shelf. A privacy page, linked from the sign-in screen, says what the app keeps about each person and who can see it.
 
 ## Seeing each other's books
 
