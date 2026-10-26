@@ -186,7 +186,7 @@ docker push $IMAGE:$TAG
 
 `./gradlew bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
 
-The image is a GraalVM native image, which the buildpack compiles ahead of time from the app and its libraries. That takes about 3 minutes and up to about 14 GB of memory for an arm64 build on an Apple silicon Mac with 18 cores, since the compiler sizes its heap to the machine it runs on. The amd64 build that Cloud Run needs runs under emulation on Apple silicon and is very slow, so give it time and give Docker plenty of memory. Only the first deploy has to build here, since the GitHub workflow in step 12 builds every later one. The executable goes into a layer of about 117 MB compressed, measured on arm64, and that layer changes with every build, so each push uploads about that much.
+The image is a GraalVM native image, which the buildpack compiles ahead of time from the app and its libraries. That takes about 3 minutes and up to about 14 GB of memory for an arm64 build on an Apple silicon Mac with 18 cores, since the compiler sizes its heap to the machine it runs on. The amd64 build that Cloud Run needs runs under emulation on Apple silicon and is very slow, so give it time and give Docker plenty of memory. Only the first deploy has to build here, since the GitHub workflow in step 12 builds every later one. The executable goes into a layer of about 122 MB compressed, and that layer changes with every build, so each push uploads about that much.
 
 ### 10. Deploy
 
@@ -210,13 +210,13 @@ gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
   --min-instances=0 --max-instances=2 --allow-unauthenticated \
   --env-vars-file=build/cloud-run-env.yaml \
   --set-secrets=SPRING_DATASOURCE_PASSWORD=db-password:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest \
-  --startup-probe=httpGet.path=/actuator/health,periodSeconds=5,timeoutSeconds=3,failureThreshold=24 \
+  --startup-probe=httpGet.path=/actuator/health,periodSeconds=1,timeoutSeconds=1,failureThreshold=120 \
   --liveness-probe=httpGet.path=/actuator/health,periodSeconds=30,timeoutSeconds=5,failureThreshold=3
 ```
 
-The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 125 MiB once it was up and about 160 MiB after 5,000 requests to its pages, files and API, signed in and not. That suggests 512 MiB would do, and the service stays at 1 GiB until Cloud Run's own metrics show what the image uses there. Its startup time on Cloud Run hasn't been measured yet.
+The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 125 MiB once it was up and about 160 MiB after 5,000 requests to its pages, files and API, signed in and not. On Cloud Run it uses about 320 to 335 MiB, so 512 MiB would fit too. A cold start there, from an instance starting to its first answer, takes about 7 to 9 seconds, against about 21 seconds for the JVM build. Starting the native process takes about 3.5 seconds before Spring logs anything, and Spring takes another 2.3 to 3.9 seconds with its first Cloud SQL connection, both far longer than on a Mac.
 
-The startup probe gives a new instance two minutes to answer `/actuator/health`, and the liveness probe restarts an instance that stops answering for a minute and a half. `/actuator/health` includes the database check, so a Cloud SQL restart during maintenance can restart the app's instances too. The db-f1-micro tier allows 25 connections and each instance's pool opens up to 10, so two instances fit. `--allow-unauthenticated` lets anyone load the page, and the app itself asks everyone to sign in.
+The startup probe checks `/actuator/health` every second and gives a new instance two minutes to answer, so an instance takes traffic within a second of being ready. The liveness probe restarts an instance that stops answering for a minute and a half. `/actuator/health` includes the database check, so a Cloud SQL restart during maintenance can restart the app's instances too. The db-f1-micro tier allows 25 connections and each instance's pool opens up to 10, so two instances fit. `--allow-unauthenticated` lets anyone load the page, and the app itself asks everyone to sign in.
 
 The deploy waits for the new revision to pass its startup probe, and reports a failure if it doesn't. Its log says why, as in "Reading logs" below. When the deploy finishes, gcloud prints a service URL, which can be the hash-based address ending in `a.run.app`. Both addresses reach the service, but Google sign-in only works at `$SERVICE_URL`, because that's the address registered as the redirect URI.
 
@@ -293,10 +293,10 @@ gcloud iam service-accounts add-iam-policy-binding $DEPLOY_ACCOUNT --role=roles/
   --member=principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPOSITORY
 ```
 
-Last, create the GitHub repository with this folder as its source, give it the project's id and number as secrets and push. The repository starts private and can be made public later without changing anything here, since GitHub masks the secrets in the logs.
+Last, create the GitHub repository with this folder as its source, give it the project's id and number as secrets and push. The repository is public, because GitHub runs a public repository's workflows on a 4-core runner with 16 GB at no cost, where the native build takes about 9.5 minutes. A private repository on GitHub's Free plan gets a 2-core runner with about 8 GB, where the native build ran short of memory and didn't finish within an hour. GitHub masks the secrets in the logs.
 
 ```sh
-gh repo create $REPOSITORY --private --source=. --remote=origin
+gh repo create $REPOSITORY --public --source=. --remote=origin
 gh secret set GCP_PROJECT_ID --repo=$REPOSITORY --body="$PROJECT_ID"
 gh secret set GCP_PROJECT_NUMBER --repo=$REPOSITORY --body="$PROJECT_NUMBER"
 git push -u origin main
@@ -363,7 +363,7 @@ Nobody can sign in with a made-up Google client, but http://localhost:8080/oauth
 
 ## Costs
 
-The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 117 MB for the native executable, which comes to roughly 0.6 GB, a few cents a month past the free 0.5 GB. GitHub Actions is free for a public repository, and a private one's runs count against the Actions minutes that come with the GitHub plan each month. Building the native image makes each run take longer, so a deploy uses more of those minutes. Scaling to zero means the first visit after a quiet spell waits for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
+The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager and logging fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 122 MB for the native executable, which comes to roughly 0.6 GB, a few cents a month past the free 0.5 GB. The repository is public, so GitHub Actions costs nothing, and a deploy takes about 11 minutes, nearly all of it the native build. Scaling to zero means the first visit after a quiet spell waits for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
 
 ```sh
 gcloud run services update dot-tracker --region=$REGION --min-instances=1
