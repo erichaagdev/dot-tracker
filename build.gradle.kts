@@ -28,7 +28,12 @@ dependencies {
   implementation(libs.bundles.security)
   implementation(libs.spring.sessionJdbc)
   implementation(libs.jspecify)
-  runtimeOnly(libs.postgres.socketFactory)
+  // The connector reaches these only for connection modes the app doesn't use, and they'd add to the native image
+  runtimeOnly(libs.postgres.socketFactory) {
+    exclude(group = "io.grpc", module = "grpc-xds")
+    exclude(group = "dev.cel")
+    exclude(group = "com.google.api.grpc", module = "proto-google-cloud-sql-v1")
+  }
   developmentOnly(libs.spring.dockerCompose)
   errorprone(libs.errorprone.core)
   errorprone(libs.nullaway)
@@ -65,6 +70,22 @@ tasks.test {
 tasks.bootBuildImage {
   imagePlatform = "linux/amd64"
   environment.put("BP_JVM_VERSION", libs.versions.java)
+  // A native image starts by reading its own executable, which Cloud Run loads lazily, so a smaller one starts faster.
+  // -Os optimizes for size, relative code pointers shrink the table the loader fixes up at every start, and the native
+  // libraries that the Cloud SQL connector's dependencies bundle stay out, since the app never loads them.
+  environment.put(
+    "BP_NATIVE_IMAGE_BUILD_ARGUMENTS",
+    listOf(
+      "-Os",
+      "-H:+UnlockExperimentalVMOptions",
+      "-H:+RelativeCodePointers",
+      "-H:ExcludeResources=META-INF/native/.*",
+      "-H:ExcludeResources=jni/.*",
+      "-H:-UnlockExperimentalVMOptions",
+    ).joinToString(" "),
+  )
+  // Nothing binds certificates to the container, so it needs no helper checking for them at every start
+  environment.put("BP_RUNTIME_CERT_BINDING_DISABLED", "true")
 }
 
 // npm runs through a shell so it's found on the PATH of the shell that started the build, where mise puts the Node
