@@ -20,6 +20,12 @@ repositories {
   mavenCentral()
 }
 
+// Hibernate reads XML mappings with JAXB, and the app maps its entities with annotations alone. JAXB's support for
+// java.awt.Image would pull image I/O and the JDK's JPEG library into the native image.
+configurations.configureEach {
+  exclude(group = "org.glassfish.jaxb", module = "jaxb-runtime")
+}
+
 dependencies {
   implementation(platform(libs.platforms.spring.boot))
   developmentOnly(platform(libs.platforms.spring.boot))
@@ -70,7 +76,8 @@ tasks.bootBuildImage {
   // -Os optimizes for size, and relative code pointers shrink the table the loader fixes up at every start.
   // junixsocket bundles its JNI library for many platforms, and only the one it loads on the image's platform stays in.
   // It names the architecture the way Java does, and the buildpack splits these arguments like a shell, so the pattern
-  // is quoted.
+  // is quoted. The JDK's content handlers for images and audio, which only URL.getContent reaches, stay out, and with
+  // them Java Sound and its library.
   environment.put(
     "BP_NATIVE_IMAGE_BUILD_ARGUMENTS",
     imagePlatform.map { platform ->
@@ -80,6 +87,7 @@ tasks.bootBuildImage {
         "--enable-native-access=ALL-UNNAMED",
         "-H:+UnlockExperimentalVMOptions",
         "-H:+RelativeCodePointers",
+        "-H:ServiceLoaderFeatureExcludeServices=java.net.ContentHandlerFactory",
         "'-H:ExcludeResources=lib/(?!$arch-Linux-clang/jni/libjunixsocket-native-[0-9.]+\\.so)[^/]+/jni/.*'",
         "-H:-UnlockExperimentalVMOptions",
       ).joinToString(" ")
