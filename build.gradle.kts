@@ -28,12 +28,8 @@ dependencies {
   implementation(libs.bundles.security)
   implementation(libs.spring.sessionJdbc)
   implementation(libs.jspecify)
-  // The connector reaches these only for connection modes the app doesn't use, and they'd add to the native image
-  runtimeOnly(libs.postgres.socketFactory) {
-    exclude(group = "io.grpc", module = "grpc-xds")
-    exclude(group = "dev.cel")
-    exclude(group = "com.google.api.grpc", module = "proto-google-cloud-sql-v1")
-  }
+  // Postgres connects through the Unix socket that Cloud Run's built-in Cloud SQL connection provides
+  runtimeOnly(libs.bundles.junixsocket)
   developmentOnly(libs.spring.dockerCompose)
   errorprone(libs.errorprone.core)
   errorprone(libs.nullaway)
@@ -71,18 +67,23 @@ tasks.bootBuildImage {
   imagePlatform = "linux/amd64"
   environment.put("BP_JVM_VERSION", libs.versions.java)
   // A native image starts by reading its own executable, which Cloud Run loads lazily, so a smaller one starts faster.
-  // -Os optimizes for size, relative code pointers shrink the table the loader fixes up at every start, and the native
-  // libraries that the Cloud SQL connector's dependencies bundle stay out, since the app never loads them.
+  // -Os optimizes for size, and relative code pointers shrink the table the loader fixes up at every start.
+  // junixsocket bundles its JNI library for many platforms, and only the one it loads on the image's platform stays in.
+  // It names the architecture the way Java does, and the buildpack splits these arguments like a shell, so the pattern
+  // is quoted.
   environment.put(
     "BP_NATIVE_IMAGE_BUILD_ARGUMENTS",
-    listOf(
-      "-Os",
-      "-H:+UnlockExperimentalVMOptions",
-      "-H:+RelativeCodePointers",
-      "-H:ExcludeResources=META-INF/native/.*",
-      "-H:ExcludeResources=jni/.*",
-      "-H:-UnlockExperimentalVMOptions",
-    ).joinToString(" "),
+    imagePlatform.map { platform ->
+      val arch = if (platform.endsWith("/arm64")) "aarch64" else "amd64"
+      listOf(
+        "-Os",
+        "--enable-native-access=ALL-UNNAMED",
+        "-H:+UnlockExperimentalVMOptions",
+        "-H:+RelativeCodePointers",
+        "'-H:ExcludeResources=lib/(?!$arch-Linux-clang/jni/libjunixsocket-native-[0-9.]+\\.so)[^/]+/jni/.*'",
+        "-H:-UnlockExperimentalVMOptions",
+      ).joinToString(" ")
+    },
   )
   // Nothing binds certificates to the container, so it needs no helper checking for them at every start
   environment.put("BP_RUNTIME_CERT_BINDING_DISABLED", "true")

@@ -5,7 +5,7 @@ errorprone = "2.51.0"
 errorprone-plugin = "5.1.1"
 graalvm-native-plugin = "1.1.17"
 nullaway = "0.14.3"
-postgres-socket-factory = "1.30.2"
+junixsocket = "2.11.1"
 
 [libraries]
 
@@ -22,7 +22,8 @@ spring-sessionJdbc = { module = "org.springframework.boot:spring-boot-starter-se
 spring-dockerCompose = { module = "org.springframework.boot:spring-boot-docker-compose" }
 flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 postgresql = { module = "org.postgresql:postgresql" }
-postgres-socketFactory = { module = "com.google.cloud.sql:postgres-socket-factory", version.ref = "postgres-socket-factory" }
+junixsocket-common = { module = "com.kohlschutter.junixsocket:junixsocket-common", version.ref = "junixsocket" }
+junixsocket-nativeCommon = { module = "com.kohlschutter.junixsocket:junixsocket-native-common", version.ref = "junixsocket" }
 jspecify = { module = "org.jspecify:jspecify" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
@@ -38,6 +39,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [bundles]
+junixsocket = ["junixsocket-common", "junixsocket-nativeCommon"]
 web = ["spring-webmvc", "spring-validation", "spring-actuator"]
 persistence = ["spring-dataJpa", "spring-flyway", "flyway-postgresql", "postgresql"]
 security = ["spring-security", "spring-securityOauth2Client"]

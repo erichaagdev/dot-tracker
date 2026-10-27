@@ -61,7 +61,7 @@ If `gcloud billing accounts list` shows nothing, create a billing account at htt
 These are the only other APIs the app and this setup use. Logging is already on in every new project.
 
 - `run.googleapis.com` runs the service.
-- `sqladmin.googleapis.com` creates the database, and the Cloud SQL Java connector uses it at runtime to find the instance.
+- `sqladmin.googleapis.com` creates the database, and Cloud Run's Cloud SQL connection uses it at runtime to reach the instance.
 - `artifactregistry.googleapis.com` holds the images.
 - `secretmanager.googleapis.com` holds the database password and the Google client secret.
 - `iam.googleapis.com` creates the service account.
@@ -195,7 +195,7 @@ The plain settings go in an env vars file, because the admin email list holds co
 ```sh
 ADMIN_EMAILS='<admin emails, comma-separated>'
 cat > build/cloud-run-env.yaml <<EOF
-SPRING_DATASOURCE_URL: "jdbc:postgresql:///dottracker?cloudSqlInstance=$PROJECT_ID:$REGION:dot-tracker&socketFactory=com.google.cloud.sql.postgres.SocketFactory"
+SPRING_DATASOURCE_URL: "jdbc:postgresql:///dottracker?socketFactory=org.newsclub.net.unix.AFUNIXSocketFactory\$FactoryArg&socketFactoryArg=/cloudsql/$PROJECT_ID:$REGION:dot-tracker/.s.PGSQL.5432"
 SPRING_DATASOURCE_USERNAME: "dottracker"
 GOOGLE_CLIENT_ID: "$GOOGLE_CLIENT_ID"
 DOT_TRACKER_ADMIN_EMAILS: "$ADMIN_EMAILS"
@@ -208,6 +208,7 @@ Then deploy.
 gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
   --service-account=$SERVICE_ACCOUNT --memory=1Gi --cpu-boost \
   --min-instances=0 --max-instances=2 --allow-unauthenticated \
+  --add-cloudsql-instances=$PROJECT_ID:$REGION:dot-tracker \
   --env-vars-file=build/cloud-run-env.yaml \
   --set-secrets=SPRING_DATASOURCE_PASSWORD=db-password:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest \
   --startup-probe=httpGet.path=/actuator/health,periodSeconds=1,timeoutSeconds=1,failureThreshold=120 \
@@ -215,6 +216,8 @@ gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
 ```
 
 The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 110 MiB once it was up. On Cloud Run it uses about 240 MiB, so 512 MiB would fit too. A cold start there takes about 5 to 6 seconds from an instance starting to its first answer, and a request that woke a service scaled to zero got its page in 5.5 seconds, against about 21 seconds for the JVM build. Starting the native process takes about 2 seconds before Spring logs anything, and Spring takes another 2.2 to 2.8 seconds with its first Cloud SQL connection, both far longer than on a Mac.
+
+`--add-cloudsql-instances` has Cloud Run open a Unix socket to the Cloud SQL instance under `/cloudsql`, and the datasource URL connects to Postgres through it with junixsocket's socket factory. Cloud Run handles the TLS and authorizes the connection as the service account, so the instance needs no authorized networks.
 
 The startup probe checks `/actuator/health` every second and gives a new instance two minutes to answer, so an instance takes traffic within a second of being ready. The liveness probe restarts an instance that stops answering for a minute and a half. `/actuator/health` includes the database check, so a Cloud SQL restart during maintenance can restart the app's instances too. The db-f1-micro tier allows 25 connections and each instance's pool opens up to 10, so two instances fit. `--allow-unauthenticated` lets anyone load the page, and the app itself asks everyone to sign in.
 
