@@ -73,6 +73,7 @@ Where there's a choice, pick the most common Spring Boot idiom over anything bes
 - Every control has a visible text label, touch targets are at least 44 px, and every status is an icon, a word and a color. The member's initials at the top right of a phone screen are the one control without a word, a link to Account named "Your account" for screen readers. Icons are per-icon imports with `aria-hidden="true"`.
 - A change applies on screen at once and then sends its request, and a refused request puts things back and shows why. Nothing asks "are you sure" except deleting and changing someone's role.
 - Browser storage goes through `src/lib/storage.js`, which tolerates storage being blocked.
+- `src/sw.js` is a service worker that opens the app from a cache while the backend starts. It never caches anything from `/api`, and the paths it leaves to the backend are the ones `SpaForwardingController` doesn't forward, so a change to one changes the other.
 
 ## Writing
 

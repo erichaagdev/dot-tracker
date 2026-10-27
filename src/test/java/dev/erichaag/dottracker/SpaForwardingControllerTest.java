@@ -19,7 +19,14 @@ class SpaForwardingControllerTest {
   MockMvc mvc;
 
   @ParameterizedTest
-  @ValueSource(strings = {"/shelf", "/welcome", "/privacy", "/books/abc", "/books/0199a3c2-7c1e-7d4b-9a50-6f1f0e2b8c3d/edit"})
+  @ValueSource(strings = {
+    "/shelf",
+    "/welcome",
+    "/privacy",
+    "/books/abc",
+    "/books/0199a3c2-7c1e-7d4b-9a50-6f1f0e2b8c3d/edit",
+    "/people/0199a3c2-7c1e-7d4b-9a50-6f1f0e2b8c3d/books/0199a3c2-8d2f-7e5c-8b61-7a2a1f3c9d4e",
+  })
   void aPathTheFrontendRoutesForwardsToTheApp(String path) throws Exception {
     // When / Then
     mvc.perform(get(path)).andExpect(forwardedUrl("/index.html"));
