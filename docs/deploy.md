@@ -88,7 +88,7 @@ gcloud billing budgets create --billing-account=$BILLING_ACCOUNT --display-name=
 
 ### 5. Create the image repository
 
-The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage to roughly 0.4 GB, as "Costs" explains. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
+The repository gets a cleanup policy that keeps the five newest images and deletes the rest, which keeps storage to roughly 0.3 GB, as "Costs" explains. A keep policy wins over a delete policy, so the five newest always stay. The action and tag state values are uppercase because gcloud silently drops a value written as `Keep` or `any`. The policy file goes in the git-ignored `build` folder.
 
 ```sh
 gcloud artifacts repositories create dot-tracker --repository-format=docker --location=$REGION \
@@ -186,7 +186,7 @@ docker push $IMAGE:$TAG
 
 `./gradlew bootBuildImage` builds `dot-tracker:latest` for `linux/amd64`, the platform Cloud Run runs. Each image is tagged with the commit it was built from, so commit before building.
 
-The image is a GraalVM native image, which the buildpack compiles ahead of time from the app and its libraries. That takes about 3 minutes and up to about 14 GB of memory for an arm64 build on an Apple silicon Mac with 18 cores, since the compiler sizes its heap to the machine it runs on. The amd64 build that Cloud Run needs runs under emulation on Apple silicon and is very slow, so give it time and give Docker plenty of memory. Only the first deploy has to build here, since the GitHub workflow in step 12 builds every later one. The executable goes into a layer of about 77 MB compressed, and that layer changes with every build, so each push uploads about that much.
+The image is a GraalVM native image, which the buildpack compiles ahead of time from the app and its libraries. That takes about 3 minutes and up to about 14 GB of memory for an arm64 build on an Apple silicon Mac with 18 cores, since the compiler sizes its heap to the machine it runs on. The amd64 build that Cloud Run needs runs under emulation on Apple silicon and takes about 9 minutes on that Mac, so give Docker plenty of memory. Only the first deploy has to build here, since the GitHub workflow in step 12 builds every later one. The executable goes into a layer of about 58 MB compressed, and that layer changes with every build, so each push uploads about that much.
 
 ### 10. Deploy
 
@@ -215,7 +215,7 @@ gcloud run deploy dot-tracker --image=$IMAGE:$TAG --region=$REGION \
   --liveness-probe=httpGet.path=/actuator/health,periodSeconds=30,timeoutSeconds=5,failureThreshold=3
 ```
 
-The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 110 MiB once it was up. On Cloud Run it uses about 240 MiB, so 512 MiB would fit too. A cold start there takes about 5 to 6 seconds from an instance starting to its first answer, and a request that woke a service scaled to zero got its page in 5.5 seconds, against about 21 seconds for the JVM build. Starting the native process takes about 2 seconds before Spring logs anything, and Spring takes another 2.2 to 2.8 seconds with its first Cloud SQL connection, both far longer than on a Mac.
+The service gets 1 GiB of memory, which is far more than the native image needs. Run natively on arm64 on an Apple silicon Mac with one CPU and 1 GiB and the migrations already applied, the app started in about 0.2 seconds, and the container used about 110 MiB once it was up. On Cloud Run it uses about 225 MiB, so 512 MiB would fit too. A cold start there takes about 3 to 4.5 seconds from an instance starting to its first answer, and a request that woke the service from zero got its page in about 3.4 seconds, against about 21 seconds for the JVM build. Starting the native process takes up to about 1.3 seconds before Spring logs anything, and Spring takes another 1.7 to 2.4 seconds with its first Cloud SQL connection, both far longer than on a Mac.
 
 `--add-cloudsql-instances` has Cloud Run open a Unix socket to the Cloud SQL instance under `/cloudsql`, and the datasource URL connects to Postgres through it with junixsocket's socket factory. Cloud Run handles the TLS and authorizes the connection as the service account, so the instance needs no authorized networks.
 
@@ -296,7 +296,7 @@ gcloud iam service-accounts add-iam-policy-binding $DEPLOY_ACCOUNT --role=roles/
   --member=principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$REPOSITORY
 ```
 
-Last, create the GitHub repository with this folder as its source, give it the project's id and number as secrets and push. The repository is public, because GitHub runs a public repository's workflows on a 4-core runner with 16 GB at no cost, where the native build takes about 9.5 minutes. A private repository on GitHub's Free plan gets a 2-core runner with about 8 GB, where the native build ran short of memory and didn't finish within an hour. GitHub masks the secrets in the logs.
+Last, create the GitHub repository with this folder as its source, give it the project's id and number as secrets and push. The repository is public, because GitHub runs a public repository's workflows on a 4-core runner with 16 GB at no cost, where the build takes about 5.5 minutes. A private repository on GitHub's Free plan gets a 2-core runner with about 8 GB, where the native build ran short of memory and didn't finish within an hour. GitHub masks the secrets in the logs.
 
 ```sh
 gh repo create $REPOSITORY --public --source=. --remote=origin
@@ -309,7 +309,7 @@ The push starts the first run, which deploys the commit that's already running. 
 
 ## Redeploying
 
-Every push to `main` deploys through `.github/workflows/deploy.yml`, and its `workflow_dispatch` trigger lets `gh workflow run deploy.yml` or the Run workflow button on the Actions tab deploy `main` again without a new commit. That's the way to redeploy without a push, since on an Apple silicon Mac the amd64 native image builds under emulation, which is very slow. A failed build or test stops the run before anything is pushed, and the running version keeps serving. Pushes that land while a run is going wait for it, and only the newest of them deploys next.
+Every push to `main` deploys through `.github/workflows/deploy.yml`, and its `workflow_dispatch` trigger lets `gh workflow run deploy.yml` or the Run workflow button on the Actions tab deploy `main` again without a new commit. That's the way to redeploy without a push, since on an Apple silicon Mac the amd64 native image builds under emulation, which takes about 9 minutes. A failed build or test stops the run before anything is pushed, and the running version keeps serving. Pushes that land while a run is going wait for it, and only the newest of them deploys next.
 
 To deploy from this machine anyway, build, push and deploy by hand.
 
@@ -366,7 +366,7 @@ Nobody can sign in with a made-up Google client, but http://localhost:8080/oauth
 
 ## Costs
 
-The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager, logging and Artifact Registry fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 77 MB for the native executable, which comes to roughly 0.4 GB, inside the free 0.5 GB. The repository is public, so GitHub Actions costs nothing, and a deploy takes about 11 minutes, nearly all of it the native build. Scaling to zero means the first visit after a quiet spell waits for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
+The bill is about $10 a month, nearly all of it Cloud SQL, at about $7.70 for the db-f1-micro instance and $1.70 for its 10 GB of SSD. Cloud Run, Secret Manager, logging and Artifact Registry fit in their free tiers for a small group. Artifact Registry keeps five images, each with its own layer of about 58 MB for the native executable, which comes to roughly 0.3 GB, inside the free 0.5 GB. The repository is public, so GitHub Actions costs nothing, and a deploy takes about 6.5 minutes, nearly all of it the build. Scaling to zero means the first visit after a quiet spell waits for an instance to start. Keeping one instance running removes that wait for roughly $13 more a month at 1 GiB, and the setting carries over to later deploys.
 
 ```sh
 gcloud run services update dot-tracker --region=$REGION --min-instances=1
